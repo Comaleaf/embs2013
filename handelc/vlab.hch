@@ -1,0 +1,43 @@
+#ifndef __VLAB_HCH_
+#define __VLAB_HCH_
+
+//Control signals
+extern FSL_Rst_port;
+extern FSL_Clk_port;
+#define RESET FSL_Rst_port.FSL_Rst
+#define CLK FSL_Clk_port.FSL_Clk
+
+//UART
+extern chan <unsigned 8> uartwrite;
+extern chan <unsigned 8> uartread;
+void uart_driver();
+
+//FSL signals
+extern unsigned 1 FSL_S_Read_signal;
+#define FSL_FROM_MB_READ FSL_S_Read_signal
+extern FSL_S_Data_port;
+#define FSL_FROM_MB_DATA FSL_S_Data_port.FSL_S_Data
+extern FSL_S_Exists_port;
+#define FSL_FROM_MB_EXISTS FSL_S_Exists_port.FSL_S_Exists
+
+extern unsigned 1 FSL_M_Write_signal;
+#define FSL_TO_MB_WRITE FSL_M_Write_signal
+extern unsigned 32 FSL_M_Data_signal;
+#define FSL_TO_MB_DATA FSL_M_Data_signal
+extern FSL_M_Full_port;
+#define FSL_TO_MB_FULL FSL_M_Full_port.FSL_M_Full
+
+//Prototypes
+//-------------
+
+void initialise(void);
+void dac_write_to_output(unsigned 4 addr, unsigned 12 data);
+void dac_power_down_output(unsigned 4 addr);
+
+//Utility functions
+void uart_print_hex_32(unsigned 32 data);
+void uart_print_hex_16(unsigned 16 data);
+void uart_print_hex_8(unsigned 8 data);
+
+#endif
+

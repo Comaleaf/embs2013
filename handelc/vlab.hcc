@@ -1,0 +1,235 @@
+#include "vlab.hch"
+#include <stdlib.hch>
+
+//FSL interface
+interface port_in(unsigned 1 FSL_Clk) FSL_Clk_port();
+interface port_in(unsigned 1 FSL_Rst) FSL_Rst_port();
+//unsigned 1 FSL_S_Clk_signal; interface port_out() FSL_S_Clk_port(unsigned 1 FSL_S_Clk = FSL_S_Clk_signal);
+interface port_in(unsigned 1 FSL_S_Clk) FSL_S_Clk_port();
+unsigned 1 FSL_S_Read_signal; interface port_out() FSL_S_Read_port(unsigned 1 FSL_S_Read = FSL_S_Read_signal);
+interface port_in(unsigned 32 FSL_S_Data) FSL_S_Data_port() with {busformat = "B<I>"};
+interface port_in(unsigned 1 FSL_S_Control) FSL_S_Control_port();
+interface port_in(unsigned 1 FSL_S_Exists) FSL_S_Exists_port();
+//unsigned 1 FSL_M_Clk_signal; interface port_out() FSL_M_Clk_port(unsigned 1 FSL_M_Clk = FSL_M_Clk_signal);
+interface port_in(unsigned 1 FSL_M_Clk) FSL_M_Clk_port();
+unsigned 1 FSL_M_Write_signal; interface port_out() FSL_M_Write_port(unsigned 1 FSL_M_Write = FSL_M_Write_signal);
+unsigned 32 FSL_M_Data_signal; interface port_out() FSL_M_Data_port(unsigned 32 FSL_M_Data = FSL_M_Data_signal) with {busformat = "B<I>"};
+unsigned 1 FSL_M_Control_signal; interface port_out() FSL_M_Control_port(unsigned 1 FSL_M_Control = FSL_M_Control_signal);
+interface port_in(unsigned 1 FSL_M_Full) FSL_M_Full_port();
+
+
+//UART
+//------------------------------------------------------------------------
+
+#define CLK_HZ 50000000
+#define UART_BAUD 115200
+#define UART_RX_BAUD_DIVIDE ((CLK_HZ) / (16 * (UART_BAUD)))
+#define UART_TX_BAUD_DIVIDE ((CLK_HZ) / (UART_BAUD))
+#define UART_RX_BAUD_DIVIDE_BITS (log2ceil(UART_RX_BAUD_DIVIDE))
+#define UART_TX_BAUD_DIVIDE_BITS (log2ceil(UART_TX_BAUD_DIVIDE))
+
+
+interface port_in(unsigned 1 UartRX) UartRX_port();
+unsigned 1 UartTX_signal; 
+interface port_out() UartTX_port(unsigned 1 UartTX = UartTX_signal);
+#define UART_RX UartRX_port.UartRX
+#define UART_TX UartTX_signal
+
+
+chan <unsigned 8> uartwrite with {fifolength = 8};
+chan <unsigned 8> uartread with {fifolength = 8};
+
+
+unsigned 1 tx_clock;
+unsigned 1 rx_clock;
+
+void wait_rx_ticks(unsigned 5 count) {
+    while(count != 0) {
+        while(rx_clock == 0) delay;
+        count--;
+    }
+    delay;
+}
+
+
+void uart_driver() {
+    unsigned (UART_RX_BAUD_DIVIDE_BITS) rx_counter;
+    unsigned (UART_TX_BAUD_DIVIDE_BITS) tx_counter;
+    
+    //Initialisation
+    par {
+        rx_clock = 0;
+        tx_clock = 0;
+        rx_counter = 0;
+        tx_counter = 0;
+        UART_TX = 1;
+    }
+    
+    par {
+        //Clock division process
+        while(1) {
+            if (rx_counter == UART_RX_BAUD_DIVIDE) {
+                par {
+                    rx_clock = 1;
+                    rx_counter = 0;
+                }
+            } else {
+                par {
+                    rx_clock = 0;
+                    rx_counter++;
+                }
+            }
+        }
+        
+        while(1) {
+            if (tx_counter == UART_TX_BAUD_DIVIDE) {
+                par {
+                    tx_clock = 1;
+                    tx_counter = 0;
+                }
+            } else {
+                par {
+                    tx_clock = 0;
+                    tx_counter++;
+                }
+            }
+        }
+        
+        
+        //Transmitter
+        while(1) {
+            unsigned 10 tosend;
+            unsigned 32 count;
+            unsigned 4 i;
+            unsigned 8 c;
+            
+            //Get the next char to send
+            uartwrite ? c;
+
+            //Build the transmission word
+            tosend =    (unsigned 1) 1 @ //1 stop bit
+                        c @   //Character (8 bits), no parity
+                        (unsigned 1) 0; //1 start bit
+                    
+            //Send the word, one bit per tx_clock
+            for(i = 0; i != 10; i++) {
+                while(!tx_clock) delay;
+                par {
+                    UART_TX = tosend[0];
+                    tosend = tosend >> 1;
+                }
+            }
+        }
+        
+        //Reciever
+        while(1) {
+            unsigned 4 i;
+            unsigned 8 datain;
+            
+            if(UART_RX == 0) {
+                wait_rx_ticks(8);
+                //Sample, should be the start bit (0)
+                if(UART_RX != 0) continue; //Probably a line spike
+                
+                //Now grab the next 8 bits
+                for(i = 0; i != 8; i++) {
+                    wait_rx_ticks(16);
+                    datain = UART_RX @ datain[7:1] ; //Set MSB and shift right
+                }
+
+                par {
+                    uartread ! datain;
+                    wait_rx_ticks(16); //Stop bit
+                }
+                
+            } else delay;
+        }
+    }
+}
+
+
+
+//Utility functions
+//------------------------
+
+unsigned 8 decode_hex_digit(unsigned 4 d) {
+	if(d > 9) return 'A' + ((unsigned 8)(0 @ d) - 10);
+	else return '0' + (unsigned 8)(0 @ d);
+}
+
+void uart_print_hex_8(unsigned 8 data) {
+	unsigned 8 c;
+	c = decode_hex_digit(data[7:4]);
+	uartwrite ! c;
+	c = decode_hex_digit(data[3:0]);
+	uartwrite ! c;
+}
+
+void uart_print_hex_16(unsigned 16 data) {
+	uart_print_hex_8(data[15:8]);
+	uart_print_hex_8(data[7:0]);
+}	
+
+
+void uart_print_hex_32(unsigned 32 data) {
+	uart_print_hex_16(data[31:16]);
+	uart_print_hex_16(data[15:0]);	
+}
+
+
+
+
+//Audio signals and interface
+//--------------------------------------------------------------------------------------
+
+interface port_in(unsigned 1 spi_miso) spi_miso_port();
+unsigned 1 spi_mosi_signal; interface port_out() spi_mosi_port(unsigned 1 spi_mosi = spi_mosi_signal);
+unsigned 1 spi_sck_signal; interface port_out() spi_sck_port(unsigned 1 spi_sck = spi_sck_signal);
+unsigned 1 dac_cs_signal; interface port_out() dac_cs_port(unsigned 1 dac_cs = dac_cs_signal);
+unsigned 1 dac_clr_signal; interface port_out() dac_clr_port(unsigned 1 dac_clr = dac_clr_signal);
+
+
+void send_to_dac(unsigned 32 data) {
+    unsigned 6 x;
+    
+    for (x = 0; x != 32; x++) {
+        spi_mosi_signal = data[31];
+        spi_sck_signal = 1;               
+        par {
+            spi_sck_signal = 0;
+            data = data << 1;
+        } 
+    }
+    delay;
+}
+
+void dac_write_to_output(unsigned 4 addr, unsigned 12 data) {
+    dac_cs_signal = 0;
+    send_to_dac((unsigned 8) 0 @ (unsigned 4)0b0011 @ addr @ data @ (unsigned 4) 0);
+    dac_cs_signal = 1;
+}
+
+void dac_power_down_output(unsigned 4 addr) {
+    dac_cs_signal = 0;
+    send_to_dac((unsigned 8) 0 @ (unsigned 4)0b0100 @ addr @ (unsigned 12)0 @ (unsigned 4) 0);    
+    dac_cs_signal = 1;
+}
+
+
+
+//Interface functions
+//-------------------
+
+void initialise(void)
+{
+    par {
+        dac_cs_signal = 1;
+        spi_sck_signal = 0;
+        //spi_mosi_signal = 0;
+        dac_clr_signal = 0;
+    }
+    
+    while(RESET == 1) delay;
+    dac_clr_signal = 1;
+}
+

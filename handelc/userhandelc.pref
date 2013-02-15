@@ -1,0 +1,31 @@
+<!DOCTYPE pref>
+<settings>
+ <workspace activeProject="0" activeConfiguration="EDIF" />
+ <breakpoints/>
+ <workspaceview>
+  <item expanded="true" />
+  <item expanded="true" />
+  <item expanded="false" />
+  <item expanded="false" />
+  <item expanded="false" />
+  <item expanded="false" />
+ </workspaceview>
+ <windowlist>
+  <window filepath="main.hcc" type="SourceEdit" >
+   <size width="701" height="689" maximised="1" />
+   <position x="-7" y="-30" />
+  </window>
+  <window filepath="main.hch" type="SourceEdit" >
+   <size width="579" height="290" maximised="0" />
+   <position x="0" y="89" />
+  </window>
+  <window filepath="vlab.hcc" type="SourceEdit" >
+   <size width="1129" height="669" maximised="0" />
+   <position x="117" y="24" />
+  </window>
+  <window filepath="vlab.hch" type="SourceEdit" >
+   <size width="928" height="591" maximised="0" />
+   <position x="473" y="128" />
+  </window>
+ </windowlist>
+</settings>

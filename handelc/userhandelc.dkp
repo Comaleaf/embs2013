@@ -1,0 +1,19 @@
+<celdev_project type="Handel-C Chip" >
+ <configuration base="Debug" name="Debug" >
+  <setting name="LibraryModule" >stdlib.hcl</setting>
+ </configuration>
+ <configuration base="EDIF" name="EDIF" >
+  <setting name="OutputFileDir" >..\implementation\</setting>
+  <setting name="TargetFamily" >XilinxSpartan3E</setting>
+  <setting name="TargetPart" >xc3s500e-4fg320</setting>
+  <setting name="ALUMappingLimit" >MULT18X18SIO=20</setting>
+  <setting name="LibraryModule" >stdlib.hcl</setting>
+ </configuration>
+ <configuration base="Release" name="Release" />
+ <configuration base="VHDL" name="VHDL" />
+ <configuration base="Verilog" name="Verilog" />
+ <document type="hcc" name="vlab.hcc" />
+ <document type="hch" name="vlab.hch" />
+ <document type="hcc" name="main.hcc" />
+ <document type="hch" name="main.hch" />
+</celdev_project>
