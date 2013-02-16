@@ -3,21 +3,6 @@
 
 unsigned 32 numerator;
 
-unsigned 32 divide(unsigned 32 n, unsigned 32 d) {
-	unsigned 32 count;
-	count = 0;
-
-	// for each denominator that is in the numerator, that is one more to count
-	while (n > n-d) {
-		par {
-			n -= d;
-			count++;
-		}
-	}
-	
-	return count;
-}
-
 State state_print(unsigned char c) {
 	// stop writing and reset state if c is 0
 	if (c == 0) {
@@ -34,20 +19,20 @@ State state_in_d(unsigned 32 d) {
 	unsigned 32 result;
     
 	// do the division
-	result = divide(numerator, d);
+	result = counting_division(numerator, d);
 
-    // write to microblaze
-    FSL_TO_MB(result);
+	// write to microblaze
+	fslwrite ! result;
     
 	// reset state
 	return STATE_ACCEPT;
 }
 
 State state_in_n(unsigned 32 n) {
-    // store the numerator
+	// store the numerator
 	numerator = n;
     
-    // now accept the denominator
+	// now accept the denominator
 	return STATE_IN_D;
 }
 
@@ -57,30 +42,22 @@ State state_accept(State new_state) {
 
 void main(void) {
 	unsigned 32 datin;
-    State state;
+	State state;
     
 	initialise();
 	state = STATE_ACCEPT;
 	
 	par {
 		uart_driver();
+		fsl_driver();
 		while (1) {
-			if (FSL_FROM_MB_EXISTS) {
-				FSL_FROM_MB_READ = 1;
-				par {
-					datin = FSL_FROM_MB_DATA;
-					FSL_FROM_MB_READ = 0;
-				}
+			fslread ? datin;
 
-				switch (state) {
-					case STATE_ACCEPT: state = state_accept(datin <- 2); break;
-					case STATE_PRINT:  state = state_print(datin <- 8);  break;
-					case STATE_IN_N:   state = state_in_n(datin);        break;
-					case STATE_IN_D:   state = state_in_d(datin);        break;
-				}
-			}
-			else {
-				delay;
+			switch (state) {
+				case STATE_ACCEPT: state = state_accept(datin <- 2); break;
+				case STATE_PRINT:  state = state_print(datin <- 8);  break;
+				case STATE_IN_N:   state = state_in_n(datin);        break;
+				case STATE_IN_D:   state = state_in_d(datin);        break;
 			}
 		}
 	}

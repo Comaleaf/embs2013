@@ -1,0 +1,36 @@
+#include "math.hch"
+
+unsigned 32 long_division(unsigned 32 n, unsigned 32 d) {
+	unsigned 32 q, mult;
+	
+	q = 0;
+	mult = 1<<31;
+	while (mult!=0) {
+		if ((0 @ n) >= d) {
+			par {
+				n -= d <- 31;
+				q |= mult;
+			}
+		}
+		par {
+			d >>= 1;
+			mult >>= 1;
+		}
+	}
+	return q;
+}
+
+unsigned 32 counting_division(unsigned 32 n, unsigned 32 d) {
+	unsigned 32 count;
+	count = 0;
+
+	// for each denominator that is in the numerator, that is one more to count
+	while (n > n-d) {
+		par {
+			n -= d;
+			count++;
+		}
+	}
+	
+	return count;
+}

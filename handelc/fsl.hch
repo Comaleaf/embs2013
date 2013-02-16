@@ -1,0 +1,8 @@
+#ifndef __FSL_HCH_
+#define __FSL_HCH_
+
+extern chan <unsigned 32> fslwrite;
+extern chan <unsigned 32> fslread;
+void fsl_driver();
+
+#endif
