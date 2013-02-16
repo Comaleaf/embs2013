@@ -1,63 +1,43 @@
 #include "vlab.hch"
 #include "main.hch"
 
-unsigned 32 numerator;
-
-State state_print(unsigned char c) {
-	// stop writing and reset state if c is 0
-	if (c == 0) {
-		return STATE_ACCEPT;
+void divider_driver() {
+	unsigned 31 d, n;
+	unsigned 32 q;
+	
+	while (1) {
+		calcread ? n;
+		calcread ? d;
+		q = counting_division(0 @ n, 0 @ d);
+		calcwrite ! q <- 31;
 	}
-	// otherwise write out
-	else {
+}
+
+void printer_driver() {
+	unsigned char c;
+	
+	while (1) {
+		termwrite ? c;
 		uartwrite ! c;
-		return STATE_PRINT;
 	}
-}
-
-State state_in_d(unsigned 32 d) {
-	unsigned 32 result;
-    
-	// do the division
-	result = counting_division(numerator, d);
-
-	// write to microblaze
-	fslwrite ! result;
-    
-	// reset state
-	return STATE_ACCEPT;
-}
-
-State state_in_n(unsigned 32 n) {
-	// store the numerator
-	numerator = n;
-    
-	// now accept the denominator
-	return STATE_IN_D;
-}
-
-State state_accept(State new_state) {
-	return new_state;
 }
 
 void main(void) {
 	unsigned 32 datin;
-	State state;
-    
+	
 	initialise();
-	state = STATE_ACCEPT;
 	
 	par {
 		uart_driver();
 		fsl_driver();
+		divider_driver();
+		printer_driver();
 		while (1) {
 			fslread ? datin;
-
-			switch (state) {
-				case STATE_ACCEPT: state = state_accept(datin <- 2); break;
-				case STATE_PRINT:  state = state_print(datin <- 8);  break;
-				case STATE_IN_N:   state = state_in_n(datin);        break;
-				case STATE_IN_D:   state = state_in_d(datin);        break;
+			
+			switch (datin \\ 1) {
+				case OPCODE_DIVIDER: calcread ! datin <- 31; break;
+				case OPCODE_PRINT:   termwrite ! datin <- 8; break;
 			}
 		}
 	}
