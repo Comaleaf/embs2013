@@ -6,7 +6,11 @@
 #define STATE_IN_N   0x2
 #define STATE_IN_D   0x3
 
-#define FSL_TO_MB(d) seq { while(FSL_TO_MB_FULL == 1){delay;} FSL_TO_MB_DATA=d; FSL_TO_MB_WRITE=1;FSL_TO_MB_WRITE=0; }
+#define FSL_TO_MB(d) do{ \
+			while(FSL_TO_MB_FULL == 1){delay;} \
+			par { FSL_TO_MB_DATA=d; \
+			      FSL_TO_MB_WRITE=1; } \
+			FSL_TO_MB_WRITE=0; }while(0)
 
 typedef unsigned 2 State;
 
