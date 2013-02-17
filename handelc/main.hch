@@ -1,19 +1,14 @@
 #ifndef __MAIN_HCH_
 #define __MAIN_HCH_
 
-#define OPCODE_PRINT    0x0
-#define OPCODE_DIVIDER  0x1
-
-extern chan <unsigned 31> calcread;
-extern chan <unsigned 31> calcwrite;
-
-extern chan <unsigned 8> termwrite;
+#define OPCODE_DIVIDER  0x0
 
 extern clk_port;
 set clock = internal CLK;
 
+extern chan <unsigned 31> divider_read;
+
 divider_driver();
-printer_driver();
 
 void main(void);
 

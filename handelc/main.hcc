@@ -3,22 +3,11 @@
 
 void divider_driver() {
 	unsigned 31 d, n;
-	unsigned 32 q;
 	
 	while (1) {
-		calcread ? n;
-		calcread ? d;
-		q = counting_division(0 @ n, 0 @ d);
-		calcwrite ! q <- 31;
-	}
-}
-
-void printer_driver() {
-	unsigned char c;
-	
-	while (1) {
-		termwrite ? c;
-		uartwrite ! c;
+		divider_read ? n;
+		divider_read ? d;
+		fsl_write ! OPCODE_DIVIDER @ (counting_division(0 @ n, 0 @ d) <- 31);
 	}
 }
 
@@ -31,13 +20,11 @@ void main(void) {
 		uart_driver();
 		fsl_driver();
 		divider_driver();
-		printer_driver();
 		while (1) {
-			fslread ? datin;
+			fsl_read ? datin;
 			
 			switch (datin \\ 1) {
-				case OPCODE_DIVIDER: calcread ! datin <- 31; break;
-				case OPCODE_PRINT:   termwrite ! datin <- 8; break;
+				case OPCODE_DIVIDER: divider_read ! datin <- 31; break;
 			}
 		}
 	}

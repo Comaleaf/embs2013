@@ -1,16 +1,10 @@
 #include "vlab.h"
 #include "hc.h"
 
-void hc_setstate(State state) {
-	putfslx(state, 0, FSL_BLOCKING);
-}
-
-void hc_print(char *output) {
-	hc_setstate(HC_STATE_PRINT);
-	
-	for (;;) {
-		putfslx(*output, 0, FSL_BLOCKING);
-		if (!*output) return;
-		output++;
-	}
+int hc_divide(int n, int d) {
+	int r;
+	putfslx(n, 0, FSL_BLOCKING); // Send numerator
+	putfslx(d, 0, FSL_BLOCKING); // Send denominator.
+	getfslx(r, 0, FSL_BLOCKING); // Get the result
+	return r;
 }

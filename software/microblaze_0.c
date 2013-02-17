@@ -14,13 +14,11 @@ int num2  = 0;
 char output[11] = {0};
 
 void display(char* string) {
-	//uart_send_string(UART, string);
-	hc_print(string);
+	uart_send_string(UART, string);
 }
 
 void display_char(char c) {
-	char s[2] = {c, 0};
-	display(s);
+	uart_send_char(UART, c);
 }
 
 #define send_padded_char(x) {display_char(' ');display_char(c);display_char(' ');}
@@ -51,13 +49,7 @@ State state_num_2(char c) {
 			case PLUS:  asciify(num1+num2, 10, output); break;
 			case MINUS: asciify(num1-num2, 10, output); break;
 			case MULT:  asciify(num1*num2, 10, output); break;
-			case DIV:
-				hc_setstate(HC_STATE_IN_N);
-				putfslx(num1, 0, FSL_BLOCKING); // Send numerator
-				putfslx(num2, 0, FSL_BLOCKING); // Send denominator.
-				getfslx(r, 0, FSL_BLOCKING); // Get the result
-				asciify(num1/num2, 10, output);
-				break;
+			case DIV:   asciify(hc_divide(num1,num2), 10, output); break;
 		}
 		
 		display(" = \n");
@@ -79,13 +71,13 @@ void write_leds(char c) {
 
 void inth_mac() {
 	write_leds(16);
-	volatile int* buffer;
-	while ((buffer = mac_packet_ready())) {
-		char* dest    = (char*)buffer+5;
-		char* source  = (char*)buffer+9;
-		short* type   = (short*)buffer+12;
-		short* length = (short*)buffer+14;
-		char* data    = (char*)buffer+16;
+	char* buffer;
+	while ((buffer = (char*)mac_packet_ready())) {
+		char* dest    = buffer+5;
+		char* source  = buffer+9;
+		short* type   = (short*)(buffer+12);
+		short* length = (short*)(buffer+14);
+		char* data    = buffer+16;
 		
 		asciify((int) *type, 10, output);
 		display(output);
@@ -170,10 +162,7 @@ void time_hc_div() {
 	start_timer(TIMER0);
 
 	for (int i=1; i<=BENCHMARK_ITERATIONS; i++) {
-		hc_setstate(HC_STATE_IN_N);
-		putfslx(BENCHMARK_ITERATIONS-i, 0, FSL_BLOCKING); // Send numerator
-		putfslx(i, 0, FSL_BLOCKING); // Send denominator.
-		getfslx(r, 0, FSL_BLOCKING); // Get the result
+		r = hc_divide(BENCHMARK_ITERATIONS-i, i);
 	}
 
 	write_leds(16);
