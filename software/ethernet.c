@@ -3,17 +3,6 @@
 #include "microblaze_0.h"
 #include "ethernet.h"
 
-void send_test(void) {
-	*(MAC_TX1 + 0) = 0xFFFFFFFF; //Destination MAC
-	*(MAC_TX1 + 1) = 0xFFFFAAAA; //Destination MAC, Source MAC
-	*(MAC_TX1 + 2) = 0xAAAAAAAA; //Source MAC
-	*(MAC_TX1 + 3) = 0x55AA0011; //Type, Data
-	*(MAC_TX1 + 4) = 0x22334455; //Data
-	*(MAC_TX1 + 5) = 0x66778899; //Data
-	*(MAC_TX1 + 6) = 0xAABBCCDD; //Data
-	mac_send_packet(28);
-}
-
 void eth_setup() {
 	*(MAC_TX1 + 0) = 0x00112233;
 	*(MAC_TX1 + 1) = 0x00160000;
