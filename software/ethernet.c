@@ -17,10 +17,10 @@ void eth_tx_string(char dest, char* data) {
 }
 
 void eth_tx_packet(char dest, char* data, short length) {
-	*(MAC_TX1+0) = 0x00112233;        //Destination MAC
-	*(MAC_TX1+1) = 0x00000011|(0x00FF0000&(dest<<16)); //Destination MAC, Source MAC
-	*(MAC_TX1+2) = 0x22330016;        //Source MAC
-	*(MAC_TX1+3) = 0x55AA0000|length; //Type, Length
+	*(MAC_TX1+0) = 0x00112233;        // Destination MAC
+	*(MAC_TX1+1) = 0x00000011|(0x00FF0000&(dest<<16)); // Destination MAC, Source MAC
+	*(MAC_TX1+2) = 0x22330016;        // Source MAC
+	*(MAC_TX1+3) = 0x55AA0000|length; // Type, Length
 	strcopy(data, (char*)MAC_TX1+4, (int)length);
 	mac_send_packet(16+length);
 }
