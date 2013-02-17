@@ -1,5 +1,20 @@
 #include "math.hch"
 
+unsigned 32 collatz(unsigned 32 n) {
+	unsigned 32 count;
+	count = 0;
+	while (n != 1) {
+		par {
+			switch (n[0]) {
+				case 0: n >>= 1; break;
+				case 1: n = (n*3) + 1; break;
+			}
+			count++;
+		}
+	}
+	return count;
+}
+
 unsigned 32 long_division(unsigned 32 n, unsigned 32 d) {
 	unsigned 32 q, mult;
 	
