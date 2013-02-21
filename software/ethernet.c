@@ -1,6 +1,6 @@
 #include "vlab.h"
 #include "utilities.h"
-#include "microblaze_0.h"
+#include "main.h"
 #include "ethernet.h"
 
 char* sender(unsigned char source) {

@@ -1,5 +1,5 @@
-#ifndef __MICROBLAZE_H_
-#define __MICROBLAZE_H_
+#ifndef __MAIN_H_
+#define __MAIN_H_
 
 typedef enum { PLUS, MINUS, MULT, DIV } Operator;
 typedef enum { NUM_1, NUM_2, MESSENGER, COMPOSER_1, COMPOSER_2 } State;

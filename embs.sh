@@ -2,7 +2,7 @@
 set -e
 
 cflags="-Wall -O2 -std=gnu99"
-sourcefiles="software/microblaze_0.c software/hc.c software/ethernet.c software/utilities.c software/vlab.c software/interrupts.s"
+sourcefiles="software/main.c software/hc.c software/ethernet.c software/utilities.c software/vlab.c software/interrupts.s"
 
 mhsfile=system.mhs
 part="xc3s500efg320-4"

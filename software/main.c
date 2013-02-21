@@ -2,7 +2,7 @@
 #include "hc.h"
 #include "utilities.h"
 #include "ethernet.h"
-#include "microblaze_0.h"
+#include "main.h"
 
 Operator op;
 State state = MESSENGER;
