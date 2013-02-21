@@ -77,11 +77,11 @@ void eth_tx_packet(unsigned char dest, char* data, short length) {
 void eth_rx_packet(unsigned char dest, unsigned char source, char* data, int length) {
 	char message[25+length];
 
-	strcopy(message+0,  "\r\n####### -> #######\r\n", 22);
-	strcopy(message+2,  sender(source), 7);
-	strcopy(message+13, sender(dest), 7);
-	strcopy(message+22, data, length);
-	strcopy(message+22+length, "\r\n", 3);
+	strncpy(message+0,  "\r\n####### -> #######\r\n", 22);
+	strncpy(message+2,  sender(source), 7);
+	strncpy(message+13, sender(dest), 7);
+	strncpy(message+22, data, length);
+	strncpy(message+22+length, "\r\n", 3);
 
 	display(message);
 }

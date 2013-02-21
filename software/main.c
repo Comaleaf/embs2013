@@ -137,7 +137,7 @@ void inth_mac() {
 				m.dest = dest;
 				m.source = source;
 				m.length = length;
-				strcopy(m.data, data, length > 1000 ? 1000 : length);
+				strncpy(m.data, data, length > 1000 ? 1000 : length);
 				buffer[bufCursor % 3] = m;
 				bufCursor++;
 			}

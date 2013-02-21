@@ -5,7 +5,7 @@ char byte2hex(char i) {
 	else        return (i-10) + 65;
 }
 
-void strcopy(char* dst, char* src, int length) {
+void strncpy(char* dst, char* src, int length) {
 	while (length-- > 0) {
 		dst[length] = src[length];
 	}
