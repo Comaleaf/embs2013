@@ -1,19 +1,15 @@
 #ifndef __MICROBLAZE_H_
 #define __MICROBLAZE_H_
 
-#define STATE_NUM_1     0x00
-#define STATE_NUM_2     0x01
-#define STATE_MESSENGER 0x02
-#define STATE_COMPOSER  0x03
-
 typedef enum { PLUS, MINUS, DIV, MULT } Operator;
-typedef enum { NUM_1, NUM_2, MESSENGER, COMPOSER } State;
+typedef enum { DIVIDE_1, DIVIDE_2, MESSENGER, COMPOSER_1, COMPOSER_2 } State;
 
 // States
-State state_num_1(char c);
-State state_num_2(char c);
+State state_divide_1(char c);
+State state_divide_2(char c);
 State state_messenger(char c);
-State state_composer(char c);
+State state_composer_1(char c);
+State state_composer_2(char c);
 
 // Interrupt handlers
 void int_handler();

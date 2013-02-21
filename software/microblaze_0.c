@@ -15,7 +15,7 @@ char output[11] = {0};
 
 void enable_calculator() {
 	display("\r\nCalculator:\r\n\t");
-	state = NUM_1;
+	state = DIVIDE_1;
 }
 
 void enable_messenger() {
@@ -31,23 +31,35 @@ void display_char(char c) {
 	uart_send_char(UART, c);
 }
 
-State state_num_1(char c) {
+State state_messenger(char c) {
+	
+}
+
+State state_composer_1(char c) {
+	
+}
+
+State state_composer_2(char c) {
+	
+}
+
+State state_divide_1(char c) {
 	if (IS_DIGIT(c)) {
 		num1 = num1*10 + (c-48);
 		display_char(c);
 	}
 	else {
 		switch (c) {
-			case 42: op = MULT;  display_char(' ');display_char(c);display_char(' '); return NUM_2;
-			case 43: op = PLUS;  display_char(' ');display_char(c);display_char(' '); return NUM_2;
-			case 45: op = MINUS; display_char(' ');display_char(c);display_char(' '); return NUM_2;
-			case 47: op = DIV;   display_char(' ');display_char(c);display_char(' '); return NUM_2;
+			case 42: op = MULT;  display_char(' ');display_char(c);display_char(' '); return DIVIDE_2;
+			case 43: op = PLUS;  display_char(' ');display_char(c);display_char(' '); return DIVIDE_2;
+			case 45: op = MINUS; display_char(' ');display_char(c);display_char(' '); return DIVIDE_2;
+			case 47: op = DIV;   display_char(' ');display_char(c);display_char(' '); return DIVIDE_2;
 		}
 	}
-	return NUM_1;
+	return DIVIDE_1;
 }
 
-State state_num_2(char c) {
+State state_divide_2(char c) {
 	if (IS_DIGIT(c)) {
 		num2 = num2*10 + (c-48);
 		display_char(c);
@@ -66,10 +78,10 @@ State state_num_2(char c) {
 
 		num1 = 0;
 		num2 = 0;
-		return NUM_1;
+		return DIVIDE_1;
 	}
 	
-	return NUM_2;
+	return DIVIDE_2;
 }
 
 void write_leds(char c) {
@@ -110,10 +122,11 @@ void inth_mac() {
 void inth_uart() {
 	while (uart_check_char(UART)) {
 		switch (state) {
-			case NUM_1:     state = state_num_1(uart_get_char(UART)); break;
-			case NUM_2:     state = state_num_2(uart_get_char(UART)); break;
-			case MESSENGER: state = state_messenger(uart_get_char(UART)); break;
-			case COMPOSER:  state = state_composer(uart_get_char(UART)); break;
+			case DIVIDE_1:   state = state_divide_1(uart_get_char(UART)); break;
+			case DIVIDE_2:   state = state_divide_2(uart_get_char(UART)); break;
+			case MESSENGER:  state = state_messenger(uart_get_char(UART)); break;
+			case COMPOSER_1: state = state_composer_1(uart_get_char(UART)); break;
+			case COMPOSER_2: state = state_composer_2(uart_get_char(UART)); break;
 		}
 	}
 }
@@ -122,12 +135,12 @@ void inth_switches() {
 	char switches = get_switches();
 	
 	if (TEST_BIT(switches, 0)) {
-		if (state != NUM_1 && state != NUM_2) {
+		if (state != DIVIDE_1 && state != DIVIDE_2) {
 			enable_calculator();
 		}
 	}
 	else {
-		if (state != MESSENGER && state != COMPOSER) {
+		if (state != MESSENGER && state != COMPOSER_1) {
 			enable_messenger();
 		}
 	}
