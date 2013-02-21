@@ -1,8 +1,15 @@
 #ifndef __MICROBLAZE_H_
 #define __MICROBLAZE_H_
 
-typedef enum { PLUS, MINUS, DIV, MULT } Operator;
+typedef enum { PLUS, MINUS, MULT, DIV } Operator;
 typedef enum { NUM_1, NUM_2, MESSENGER, COMPOSER_1, COMPOSER_2 } State;
+
+typedef struct {
+	char dest;
+	char source;
+	char data[1000];
+	int length;
+} Message;
 
 // States
 State state_num_1(char c);
