@@ -1,13 +1,17 @@
 #include "vlab.hch"
+#include "fsl.hch"
+#include "math.hch"
 #include "main.hch"
 
 void divider_driver() {
 	unsigned 31 d, n;
+    unsigned 32 out;
 	
 	while (1) {
 		divider_read ? n;
 		divider_read ? d;
-		fsl_write ! OPCODE_DIVIDER @ (counting_division(0 @ n, 0 @ d) <- 31);
+        out = counting_division(0 @ n, 0 @ d);
+		fsl_write ! OPCODE_DIVIDER @ (out <- 31);
 	}
 }
 
@@ -22,8 +26,8 @@ void main(void) {
 		divider_driver();
 		while (1) {
 			fsl_read ? datin;
-			
-			switch (datin \\ 1) {
+			uartwrite ! (48 + (0 @ datin[31]));
+			switch (datin[31]) {
 				case OPCODE_DIVIDER: divider_read ! datin <- 31; break;
 			}
 		}

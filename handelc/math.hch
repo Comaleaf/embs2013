@@ -2,6 +2,6 @@
 #define __MATH_HCH_
 
 unsigned 32 counting_division(unsigned 32 n, unsigned 32 d);
-unsigned 32 long_division(unsigned 32 n, unsigned 32 d);
+//unsigned 32 long_division(unsigned 32 n, unsigned 32 d);
 
 #endif
