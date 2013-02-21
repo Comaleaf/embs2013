@@ -5,7 +5,7 @@
 #include "microblaze_0.h"
 
 Operator op;
-State state = STATE_MESSENGER;
+State state = MESSENGER;
 
 char leds = 0;
 int num1  = 0;
@@ -15,12 +15,12 @@ char output[11] = {0};
 
 void enable_calculator() {
 	display("\r\nCalculator:\r\n\t");
-	state = STATE_NUM_1;
+	state = NUM_1;
 }
 
 void enable_messenger() {
 	display("\r\nMessenger:\r\n");
-	state = STATE_MESSENGER;
+	state = MESSENGER;
 }
 
 void display(char* string) {
@@ -38,13 +38,13 @@ State state_num_1(char c) {
 	}
 	else {
 		switch (c) {
-			case 42: op = MULT;  display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
-			case 43: op = PLUS;  display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
-			case 45: op = MINUS; display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
-			case 47: op = DIV;   display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
+			case 42: op = MULT;  display_char(' ');display_char(c);display_char(' '); return NUM_2;
+			case 43: op = PLUS;  display_char(' ');display_char(c);display_char(' '); return NUM_2;
+			case 45: op = MINUS; display_char(' ');display_char(c);display_char(' '); return NUM_2;
+			case 47: op = DIV;   display_char(' ');display_char(c);display_char(' '); return NUM_2;
 		}
 	}
-	return STATE_NUM_1;
+	return NUM_1;
 }
 
 State state_num_2(char c) {
@@ -66,10 +66,10 @@ State state_num_2(char c) {
 
 		num1 = 0;
 		num2 = 0;
-		return STATE_NUM_1;
+		return NUM_1;
 	}
 	
-	return STATE_NUM_2;
+	return NUM_2;
 }
 
 void write_leds(char c) {
@@ -82,7 +82,7 @@ void inth_mac() {
 	while ((buffer = mac_packet_ready())) {
 		short type   = (short)((*(buffer+3) & 0xFFFF0000) >> 16);
 
-		if (type == 0x55AA || state != STATE_MESSENGER) {
+		if (type == 0x55AA || state != MESSENGER) {
 			char dest    = (char)((*(buffer+1) & 0x00FF0000) >> 16);
 			char source  = (char)(*(buffer+2) & 0x000000FF);
 			short length = (short)(*(buffer+3) & 0x0000FFFF);
@@ -110,10 +110,10 @@ void inth_mac() {
 void inth_uart() {
 	while (uart_check_char(UART)) {
 		switch (state) {
-			case STATE_NUM_1: state = state_num_1(uart_get_char(UART)); break;
-			case STATE_NUM_2: state = state_num_2(uart_get_char(UART)); break;
-			case STATE_MESSENGER: break;
-			case STATE_COMPOSER: break;
+			case NUM_1:     state = state_num_1(uart_get_char(UART)); break;
+			case NUM_2:     state = state_num_2(uart_get_char(UART)); break;
+			case MESSENGER: state = state_messenger(uart_get_char(UART)); break;
+			case COMPOSER:  state = state_composer(uart_get_char(UART)); break;
 		}
 	}
 }
@@ -122,12 +122,12 @@ void inth_switches() {
 	char switches = get_switches();
 	
 	if (TEST_BIT(switches, 0)) {
-		if (state != STATE_NUM_1 && state != STATE_NUM_2) {
+		if (state != NUM_1 && state != NUM_2) {
 			enable_calculator();
 		}
 	}
 	else {
-		if (state != STATE_MESSENGER && state != STATE_COMPOSER) {
+		if (state != MESSENGER && state != COMPOSER) {
 			enable_messenger();
 		}
 	}
@@ -196,8 +196,9 @@ int main(void) {
 	// UART
 	intc_enable_interrupt(INTC_UART);
 	uart_enable_interrupts(UART);
-	 
-	eth_tx_string(0xFF, "Hello from Lauren!!!!");
+	
+	// Announce on network (so switches display broadcasts)
+	eth_tx_string(0xFF, "Announcing (Hello!)");
 	
 	return 0;
 }

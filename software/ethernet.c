@@ -5,7 +5,7 @@
 
 char* sender(unsigned char source) {
 	switch (source) {
-		case 0x00: return "EXAMPLE";
+		case 0x00: return "CatFact";
 		case 0x01: return "ddjb500";
 		case 0x02: return "jjb513 ";
 		case 0x03: return "mb798  ";
@@ -41,6 +41,7 @@ char* sender(unsigned char source) {
 }
 
 void eth_setup() {
+	// Set MAC address
 	MAC_TX1[0] = 0x00112233;
 	MAC_TX1[1] = 0x00160000;
 	mac_set_mac_address();
@@ -54,6 +55,9 @@ void eth_tx_string(unsigned char dest, char* data) {
 }
 
 void eth_tx_packet(unsigned char dest, char* data, short length) {
+	MAC_TX1[2] = 0x22330016; // Source MAC
+	MAC_TX1[3] = 0x55AA0000|length; // Type, Length
+	
 	if (dest == 0xFF) {
 		MAC_TX1[0] = 0xFFFFFFFF; // Destination MAC
 		MAC_TX1[1] = 0xFFFF0011; // Destination MAC, Source MAC
@@ -62,9 +66,7 @@ void eth_tx_packet(unsigned char dest, char* data, short length) {
 		MAC_TX1[0] = 0x00112233; // Destination MAC
 		MAC_TX1[1] = 0x00000011|(0x00FF0000&(dest<<16)); // Destination MAC, Source MAC	
 	}
-	MAC_TX1[2] = 0x22330016; // Source MAC
-	MAC_TX1[3] = 0x55AA0000|length; // Type, Length
-	
+		
 	for (int i=0; i*4<length; i++) {
 		MAC_TX1[4+i] = ((data[4*i]<<24) + (data[4*i+1]<<16) + (data[4*i+2]<<8) + (data[4*i+3]));
 	}
