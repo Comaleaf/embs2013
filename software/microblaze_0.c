@@ -198,44 +198,6 @@ int main(void) {
 	uart_enable_interrupts(UART);
 	 
 	eth_tx_string(0xFF, "Hello from Lauren!!!!");
-	 
-	//initialise_timer(TIMER0);
-	//time_mb_div();
-	//time_hc_div();
-
-	return 0;
-}
-
-/*
-void time_mb_div() {
-	volatile int x, y, r;
-	load_timer(TIMER0, 0);
-	start_timer(TIMER0);
-
-	for (int i=1; i<=BENCHMARK_ITERATIONS; i++) {
-		x = BENCHMARK_ITERATIONS-i;
-		y = i;
-		r = x / y;
-	}
 	
-	stop_timer(TIMER0); 
-	r;
-	asciify(timer_value(TIMER0) / BENCHMARK_ITERATIONS, 10, output);
-	display(output);
-}
-
-void time_hc_div() {
-	volatile int r;
-	load_timer(TIMER0, 0);
-	start_timer(TIMER0);
-
-	for (int i=1; i<=BENCHMARK_ITERATIONS; i++) {
-		r = hc_divide(BENCHMARK_ITERATIONS-i, i);
-	}
-
-	write_leds(16);
-	stop_timer(TIMER0);
-	asciify(timer_value(TIMER0) / BENCHMARK_ITERATIONS, 10, output);
-	display(output);
-	r; // for warnings
+	return 0;
 }
