@@ -194,7 +194,6 @@ int main(void) {
 	intc_enable_interrupt(INTC_UART);
 	uart_enable_interrupts(UART);
 	 
-	display("\r\nCalculator:\r\n\t");	
 	//initialise_timer(TIMER0);
 	//time_mb_div();
 	//time_hc_div();
