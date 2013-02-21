@@ -21,7 +21,6 @@ void display_char(char c) {
 	uart_send_char(UART, c);
 }
 
-#define send_padded_char(x) {display_char(' ');display_char(c);display_char(' ');}
 State state_num_1(char c) {
 	if (IS_DIGIT(c)) {
 		num1 = num1*10 + (c-48);
@@ -29,10 +28,10 @@ State state_num_1(char c) {
 	}
 	else {
 		switch (c) {
-			case 42: op = MULT;  send_padded_char(c); return STATE_NUM_2;
-			case 43: op = PLUS;  send_padded_char(c); return STATE_NUM_2;
-			case 45: op = MINUS; send_padded_char(c); return STATE_NUM_2;
-			case 47: op = DIV;   send_padded_char(c); return STATE_NUM_2;
+			case 42: op = MULT;  display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
+			case 43: op = PLUS;  display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
+			case 45: op = MINUS; display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
+			case 47: op = DIV;   display_char(' ');display_char(c);display_char(' '); return STATE_NUM_2;
 		}
 	}
 	return STATE_NUM_1;
@@ -87,7 +86,7 @@ void inth_mac() {
 		mac_clear_rx_packet(buffer);
 	}
 }
-
+	
 void inth_uart() {
 	while (uart_check_char(UART)) {
 		switch (state) {

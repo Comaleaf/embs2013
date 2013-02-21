@@ -2,7 +2,7 @@
 
 char byte2hex(char i) {
 	if (i < 10) return i + 48;
-	else return (i-10) + 65;
+	else        return (i-10) + 65;
 }
 
 void strcopy(char* src, char* dst, int length) {
@@ -23,7 +23,7 @@ void asciify(int n, int digits, char* output) {
 	
 	for (int i = 0; i <= digits; i++) {
 		ord = pow_10(digits-i);
-			
+		
 		if (ord <= n) {
 			seen = 1;
 			output[i] = 48 + n/ord;
