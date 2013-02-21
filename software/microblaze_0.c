@@ -5,13 +5,23 @@
 #include "microblaze_0.h"
 
 Operator op;
-State state = STATE_NUM_1;
+State state = STATE_MESSENGER;
 
 char leds = 0;
 int num1  = 0;
 int num2  = 0;
 
 char output[11] = {0};
+
+void enable_calculator() {
+	display("\r\nCalculator:\r\n\t");
+	state = STATE_NUM_1;
+}
+
+void enable_messenger() {
+	display("\r\nMessenger:\r\n");
+	state = STATE_MESSENGER;
+}
 
 void display(char* string) {
 	uart_send_string(UART, string);
@@ -43,7 +53,6 @@ State state_num_2(char c) {
 		display_char(c);
 	}
 	else if (c == 61) { // '='
-		int r; // for divide
 		switch (op) {
 			case PLUS:  asciify(num1+num2, 10, output); break;
 			case MINUS: asciify(num1-num2, 10, output); break;
@@ -69,35 +78,59 @@ void write_leds(char c) {
 }
 
 void inth_mac() {
-	write_leds(16);
-	char* buffer;
-	while ((buffer = (char*)mac_packet_ready())) {
-		char* dest    = buffer+5;
-		char* source  = buffer+9;
-		short* type   = (short*)(buffer+12);
-		short* length = (short*)(buffer+14);
-		char* data    = buffer+16;
+	volatile int* buffer;
+	while ((buffer = mac_packet_ready())) {
+		short type   = (short)((*(buffer+3) & 0xFFFF0000) >> 16);
+
+		if (type == 0x55AA || state != STATE_MESSENGER) {
+			char dest    = (char)((*(buffer+1) & 0x00FF0000) >> 16);
+			char source  = (char)(*(buffer+2) & 0x000000FF);
+			short length = (short)(*(buffer+3) & 0x0000FFFF);
+			char data[length+3];
+
+			short chunk = 0;
+			while (chunk*4 < length) {
+				data[chunk*4]   = (char)((*(buffer+4+chunk) & 0xFF000000) >> 24);
+				data[chunk*4+1] = (char)((*(buffer+4+chunk) & 0x00FF0000) >> 16);
+				data[chunk*4+2] = (char)((*(buffer+4+chunk) & 0x0000FF00) >> 8);
+				data[chunk*4+3] = (char)((*(buffer+4+chunk) & 0x000000FF));
+				
+				chunk++;
+			}
 		
-		asciify((int) *type, 10, output);
-		display(output);
-		if (*type == 0x55AA) {
-			eth_rx_packet(*dest, *source, data, *length);
+			mac_clear_rx_packet(buffer);
+			eth_rx_packet(dest, source, data, length);
 		}
-		mac_clear_rx_packet(buffer);
+		else {
+			mac_clear_rx_packet(buffer);
+		}
 	}
 }
-	
+
 void inth_uart() {
 	while (uart_check_char(UART)) {
 		switch (state) {
 			case STATE_NUM_1: state = state_num_1(uart_get_char(UART)); break;
 			case STATE_NUM_2: state = state_num_2(uart_get_char(UART)); break;
+			case STATE_MESSENGER: break;
+			case STATE_COMPOSER: break;
 		}
 	}
 }
 
 void inth_switches() {
 	char switches = get_switches();
+	
+	if (TEST_BIT(switches, 0)) {
+		if (state != STATE_NUM_1 && state != STATE_NUM_2) {
+			enable_calculator();
+		}
+	}
+	else {
+		if (state != STATE_MESSENGER && state != STATE_COMPOSER) {
+			enable_messenger();
+		}
+	}
 	
 	write_leds((switches << 4) | (leds & 0x0F));
 	
@@ -106,6 +139,8 @@ void inth_switches() {
 
 void inth_buttons() {
 	char buttons = get_buttons();
+	
+	eth_tx_string(0x00, "Hello 0x10!!!");
 	
 	if      (TEST_BIT(buttons, 0)) write_leds(leds & 0xF0);
 	else if (TEST_BIT(buttons, 1)) write_leds(leds ^ 8);
@@ -138,6 +173,40 @@ void int_handler() {
 	intc_acknowledge_interrupt(vec);
 }
 
+int main(void) {
+    initialise();
+	
+	// MAC
+	eth_setup();
+	intc_enable_interrupt(INTC_MAC);
+	mac_enable_interrupts();
+	
+	// FSL
+	//intc_enable_interrupt(INTC_FSL);
+	
+	// Buttons
+	intc_enable_interrupt(INTC_BUTTONS);
+	buttons_enable_interrupts();
+	
+	// Switches
+	intc_enable_interrupt(INTC_SWITCHES);
+	switches_enable_interrupts();
+	inth_switches(); // update leds to initial configuration
+	
+	// UART
+	intc_enable_interrupt(INTC_UART);
+	uart_enable_interrupts(UART);
+	 
+	eth_tx_string(0xFF, "Hello from Lauren!!!!");
+	 
+	//initialise_timer(TIMER0);
+	//time_mb_div();
+	//time_hc_div();
+
+	return 0;
+}
+
+/*
 void time_mb_div() {
 	volatile int x, y, r;
 	load_timer(TIMER0, 0);
@@ -168,36 +237,6 @@ void time_hc_div() {
 	stop_timer(TIMER0);
 	asciify(timer_value(TIMER0) / BENCHMARK_ITERATIONS, 10, output);
 	display(output);
+	r; // for warnings
 }
-
-int main(void) {
-    initialise();
-	
-	// MAC
-	eth_setup();
-	intc_enable_interrupt(INTC_MAC);
-	mac_enable_interrupts();
-	
-	// FSL
-	//intc_enable_interrupt(INTC_FSL);
-	
-	// Buttons
-	intc_enable_interrupt(INTC_BUTTONS);
-	buttons_enable_interrupts();
-	
-	// Switches
-	intc_enable_interrupt(INTC_SWITCHES);
-	switches_enable_interrupts();
-	inth_switches(); // update leds to initial configuration
-	
-	// UART
-	intc_enable_interrupt(INTC_UART);
-	uart_enable_interrupts(UART);
-	 
-	display("\r\nCalculator:\r\n\t");	
-	//initialise_timer(TIMER0);
-	//time_mb_div();
-	//time_hc_div();
-
-	return 0;
-}
+*/

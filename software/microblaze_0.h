@@ -3,8 +3,10 @@
 
 #define BENCHMARK_ITERATIONS 10000
 
-#define STATE_NUM_1 0x0
-#define STATE_NUM_2 0x1
+#define STATE_NUM_1     0x00
+#define STATE_NUM_2     0x01
+#define STATE_MESSENGER 0x02
+#define STATE_COMPOSER  0x03
 
 typedef enum { PLUS, MINUS, DIV, MULT } Operator;
 typedef char State;

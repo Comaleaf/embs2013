@@ -1,6 +1,9 @@
 #include "vlab.hch"
 #include "fsl.hch"
 
+chan <unsigned 32> fsl_write;
+chan <unsigned 32> fsl_read;
+
 void fsl_driver() {
 	unsigned 32 in, out;
 	
@@ -13,7 +16,7 @@ void fsl_driver() {
 					in = FSL_FROM_MB_DATA;
 					FSL_FROM_MB_READ = 0;
 				}
-				fslread ! in;
+				fsl_read ! in;
 			}
 			else {
 				delay; // for timing
@@ -22,7 +25,7 @@ void fsl_driver() {
 		// Transmit
 		while (1) {
 			if (FSL_TO_MB_FULL == 0) {
-				fslwrite ? out;
+				fsl_write ? out;
 			
 				par {
 					FSL_TO_MB_DATA = out;

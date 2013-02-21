@@ -16,4 +16,8 @@
  <document type="hch" name="vlab.hch" />
  <document type="hcc" name="main.hcc" />
  <document type="hch" name="main.hch" />
+ <document type="hcc" name="fsl.hcc" />
+ <document type="hch" name="fsl.hch" />
+ <document type="hcc" name="math.hcc" />
+ <document type="hch" name="math.hch" />
 </celdev_project>

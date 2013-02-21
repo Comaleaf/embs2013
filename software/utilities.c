@@ -5,9 +5,9 @@ char byte2hex(char i) {
 	else        return (i-10) + 65;
 }
 
-void strcopy(char* src, char* dst, int length) {
+void strcopy(char* dst, char* src, int length) {
 	while (length-- > 0) {
-		src[length] = dst[length];
+		dst[length] = src[length];
 	}
 }
 

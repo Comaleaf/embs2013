@@ -6,9 +6,9 @@
 extern clk_port;
 set clock = internal CLK;
 
-extern chan <unsigned 31> divider_read;
+chan <unsigned 31> divider_read;
 
-divider_driver();
+void divider_driver();
 
 void main(void);
 

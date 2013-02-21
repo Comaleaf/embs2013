@@ -14,7 +14,7 @@ unsigned 32 collatz(unsigned 32 n) {
 	}
 	return count;
 }
-
+/*
 unsigned 32 long_division(unsigned 32 n, unsigned 32 d) {
 	unsigned 32 q, mult;
 	
@@ -33,7 +33,7 @@ unsigned 32 long_division(unsigned 32 n, unsigned 32 d) {
 		}
 	}
 	return q;
-}
+}*/
 
 unsigned 32 counting_division(unsigned 32 n, unsigned 32 d) {
 	unsigned 32 count;

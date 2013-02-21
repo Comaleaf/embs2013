@@ -6,7 +6,7 @@
 
 // utilities
 char byte2hex(char i);
-void strcopy(char* src, char* dst, int length);
+void strcopy(char* dst, char* src, int length);
 int pow_10(int n);
 void asciify(int n, int digits, char* output);
 
