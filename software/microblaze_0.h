@@ -2,11 +2,11 @@
 #define __MICROBLAZE_H_
 
 typedef enum { PLUS, MINUS, DIV, MULT } Operator;
-typedef enum { DIVIDE_1, DIVIDE_2, MESSENGER, COMPOSER_1, COMPOSER_2 } State;
+typedef enum { NUM_1, NUM_2, MESSENGER, COMPOSER_1, COMPOSER_2 } State;
 
 // States
-State state_divide_1(char c);
-State state_divide_2(char c);
+State state_num_1(char c);
+State state_num_2(char c);
 State state_messenger(char c);
 State state_composer_1(char c);
 State state_composer_2(char c);
