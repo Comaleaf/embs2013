@@ -12,8 +12,13 @@ void strncpy(char* dst, char* src, int length) {
 }
 
 int pow_10(int n) {
-	if (n <= 0) return 1;
-	else        return 10 * pow_10(n-1);
+	int v = 1;
+	
+	while (n-- > 1) {
+		v *= 10;
+	}
+	
+	return v;
 }
 
 void asciify(int n, int digits, char* output) {
