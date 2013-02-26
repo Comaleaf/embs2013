@@ -5,10 +5,11 @@ char byte2hex(char i) {
 	else        return (i-10) + 65;
 }
 
-void strncpy(char* dst, char* src, int length) {
+char* strncpy(char* dst, char* src, int length) {
 	while (length-- > 0) {
 		dst[length] = src[length];
 	}
+	return dst;
 }
 
 int pow_10(int n) {

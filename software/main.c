@@ -26,7 +26,7 @@ void display_char(char c) {
 	uart_send_char(UART, c);
 }
 
-State state_messenger(char c) {
+State state_messenger(unsigned char c) {
 	display("\r\n> ");
 	return state_composer_1(c);
 }
@@ -37,7 +37,12 @@ State state_composer_1(unsigned char c) {
 		dest += (c-48);
 		display_char(c);
 	}
-	else if (c == 10) { // LF, CR is 13
+	else if (IS_HEXIT(c)) {
+		dest <<= 4;
+		dest += (c-'A'+10);
+		display_char(c);
+	}
+	else if (c == 13) { // LF, CR is 13
 		display_char(' ');
 		return COMPOSER_2;
 	}
@@ -45,11 +50,12 @@ State state_composer_1(unsigned char c) {
 	return COMPOSER_1;
 }
 
-State state_composer_2(char c) {
-	if (c == 10) { // LF
+State state_composer_2(unsigned char c) {
+	if (c == 13) { // LF
 		eth_tx_packet(dest, message, cursor-message);
 		cursor = message;
 		dest = 0x00;
+		display("\r\n[Sent]\r\n");
 		return MESSENGER;
 	}
 	
@@ -58,7 +64,7 @@ State state_composer_2(char c) {
 	return COMPOSER_2;
 }
 
-State state_num_1(char c) {
+State state_num_1(unsigned char c) {
 	if (IS_DIGIT(c)) {
 		num1 = num1*10 + (c-48);
 		display_char(c);
@@ -74,7 +80,7 @@ State state_num_1(char c) {
 	return NUM_1;
 }
 
-State state_num_2(char c) {
+State state_num_2(unsigned char c) {
 	if (IS_DIGIT(c)) {
 		num2 = num2*10 + (c-48);
 		display_char(c);
@@ -165,20 +171,22 @@ void inth_switches() {
 	
 	if (TEST_BIT(switches, 0)) {
 		if (state == NUM_1 || state == NUM_2) {
+			mac_enable_interrupts();
 			display("\r\nMessenger:\r\n");
 			state = MESSENGER;
 			
 			// Empty buffer
 			for(int i=0; i<3; i++) {
-				if (buffer[i] != NULL) {
+				if (buffer[i].data[0] != 0) {
 					eth_rx_packet(buffer[i].dest, buffer[i].source, buffer[i].data, buffer[i].length);
-					buffer[i] = NULL;
+					buffer[i].data[0] = 0;
 				}
 			}
 		}
 	}
 	else {
 		if (state == MESSENGER || state == COMPOSER_1 || state == COMPOSER_2) {
+			mac_disable_interrupts();
 			display("\r\nCalculator:\r\n\t");
 			state = NUM_1;
 		}
@@ -199,6 +207,14 @@ void inth_buttons() {
 	else if (TEST_BIT(buttons, 4)) write_leds(leds ^ 1);
 	
 	buttons_clear_interrupt();
+}
+
+void inth_fsl() {
+	char output[10] = {0};
+	int rv;
+	getfslx(rv, 0, FSL_BLOCKING);
+	asciify(rv, 10, output);
+	display(output);
 }
 
 DECLARE_INTERRUPT_HANDLER(int_handler);
@@ -222,6 +238,9 @@ int main(void) {
 	eth_setup();
 	intc_enable_interrupt(INTC_MAC);
 	mac_enable_interrupts();
+	
+	// FSL
+	intc_enable_interrupt(INTC_FSL);
 	
 	// Buttons
 	intc_enable_interrupt(INTC_BUTTONS);
