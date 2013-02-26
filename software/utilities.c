@@ -1,8 +1,8 @@
 #include "utilities.h"
 
 char byte2hex(char i) {
-	if (i < 10) return i + 48;
-	else        return (i-10) + 65;
+	if (i < 10) return i + '0';
+	else        return (i-10) + 'A';
 }
 
 char* strncpy(char* dst, char* src, int length) {
@@ -32,7 +32,7 @@ void asciify(int n, int digits, char* output) {
 		
 		if (ord <= n) {
 			seen = 1;
-			output[i] = 48 + n/ord;
+			output[i] = '0' + n/ord;
 			n -= (n/ord) * ord;
 		}
 		else if (seen || i == digits) {

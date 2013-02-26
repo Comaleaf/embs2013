@@ -34,24 +34,25 @@ State state_messenger(unsigned char c) {
 State state_composer_1(unsigned char c) {
 	if (IS_DIGIT(c)) {
 		dest <<= 4;
-		dest += (c-48);
+		dest += (c-'0');
 		display_char(c);
 	}
 	else if (IS_HEXIT(c)) {
+		c &= 0xDF; // Make uppercase
 		dest <<= 4;
 		dest += (c-'A'+10);
 		display_char(c);
 	}
-	else if (c == 13) { // LF, CR is 13
+	else if (c == '\r') { // Carriage-return
 		display_char(' ');
 		return COMPOSER_2;
 	}
-	
+
 	return COMPOSER_1;
 }
 
 State state_composer_2(unsigned char c) {
-	if (c == 13) { // LF
+	if (c == '\r') {
 		eth_tx_packet(dest, message, cursor-message);
 		cursor = message;
 		dest = 0x00;
@@ -66,15 +67,15 @@ State state_composer_2(unsigned char c) {
 
 State state_num_1(unsigned char c) {
 	if (IS_DIGIT(c)) {
-		num1 = num1*10 + (c-48);
+		num1 = num1*10 + (c-'0');
 		display_char(c);
 	}
 	else {
 		switch (c) {
-			case 42: op = MULT;  display_char(' '); display_char(c); display_char(' '); return NUM_2;
-			case 43: op = PLUS;  display_char(' '); display_char(c); display_char(' '); return NUM_2;
-			case 45: op = MINUS; display_char(' '); display_char(c); display_char(' '); return NUM_2;
-			case 47: op = DIV;   display_char(' '); display_char(c); display_char(' '); return NUM_2;
+			case '*': op = MULT;  display_char(' '); display_char(c); display_char(' '); return NUM_2;
+			case '+': op = PLUS;  display_char(' '); display_char(c); display_char(' '); return NUM_2;
+			case '-': op = MINUS; display_char(' '); display_char(c); display_char(' '); return NUM_2;
+			case '/': op = DIV;   display_char(' '); display_char(c); display_char(' '); return NUM_2;
 		}
 	}
 	return NUM_1;
@@ -82,10 +83,10 @@ State state_num_1(unsigned char c) {
 
 State state_num_2(unsigned char c) {
 	if (IS_DIGIT(c)) {
-		num2 = num2*10 + (c-48);
+		num2 = num2*10 + (c-'0');
 		display_char(c);
 	}
-	else if (c == 61) { // '='
+	else if (c == '=') { // '='
 		char output[11] = {0};
 	
 		switch (op) {
