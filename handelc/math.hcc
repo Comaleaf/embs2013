@@ -1,6 +1,6 @@
 #include "math.hch"
 
-unsigned 32 collatz(unsigned 32 n) {
+inline unsigned 32 collatz(unsigned 32 n) {
 	unsigned 32 count;
 	count = 0;
 	while (n != 1) {

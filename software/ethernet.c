@@ -54,7 +54,7 @@ void eth_tx_string(unsigned char dest, char* data) {
 	eth_tx_packet(dest, data, length);
 }
 
-void eth_tx_packet(unsigned char dest, char* data, short length) {
+void eth_tx_packet(unsigned char dest, char* data, short length) {	
 	MAC_TX1[2] = 0x22330016; // Source MAC
 	MAC_TX1[3] = 0x55AA0000|length; // Type, Length
 	

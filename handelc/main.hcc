@@ -3,6 +3,28 @@
 #include "math.hch"
 #include "main.hch"
 
+#define COLLATZ(i) \
+    chan <unsigned 32> collatz_write_##i; \
+    chan <unsigned 32> collatz_read_##i; \
+    void collatz_driver_##i() { \
+        unsigned 32 n, r; \
+        collatz_read_##i ? n; \
+        r = collatz(n); \
+        collatz_write_##i ! r; \
+    }
+    
+#define COLLATZ_TO_FSL(i) \
+    case collatz_write_##i ? r: fsl_write ! r; break
+
+#define COLLATZ_COMPUTE(n) \
+    prialt { \
+        case collatz_write_1 ! n: break; \
+        case collatz_write_2 ! n: break; \
+    }
+
+COLLATZ(1)
+COLLATZ(2)
+
 void divider_driver() {
 	unsigned 31 d, n;
     unsigned 32 out;
@@ -24,6 +46,13 @@ void main(void) {
 		uart_driver();
 		fsl_driver();
 		divider_driver();
+        while (1) {
+            unsigned 32 r;
+            prialt {
+                COLLATZ_TO_FSL(1);
+                COLLATZ_TO_FSL(2);
+            }
+        }
 		while (1) {
 			fsl_read ? datin;
 			uartwrite ! (48 + (0 @ datin[31]));
@@ -31,5 +60,8 @@ void main(void) {
 				case OPCODE_DIVIDER: divider_read ! datin <- 31; break;
 			}
 		}
+        par (i=0; i<4; i++) {
+            COLLATZ_COMPUTE(i)
+        }
 	}
 }

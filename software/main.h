@@ -12,11 +12,11 @@ typedef struct {
 } Message;
 
 // States
-State state_num_1(char c);
-State state_num_2(char c);
-State state_messenger(char c);
-State state_composer_1(char c);
-State state_composer_2(char c);
+State state_num_1(unsigned char c);
+State state_num_2(unsigned char c);
+State state_messenger(unsigned char c);
+State state_composer_1(unsigned char c);
+State state_composer_2(unsigned char c);
 
 // Interrupt handlers
 void int_handler();
