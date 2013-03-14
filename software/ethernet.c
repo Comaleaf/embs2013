@@ -85,3 +85,11 @@ void eth_rx_packet(unsigned char dest, unsigned char source, char* data, int len
 
 	display(message);
 }
+
+void eth_rx_frame(unsigned char dest, unsigned char source, short stream, char samplerate, char samplewidth, int index, int length, char* data) {
+	if (samplerate == 1 && samplewidth == 1 && index == 3) {
+		for(int i=0; i < length; i++) {
+			putfslx(data[i], 0, FSL_BLOCKING); // Send numerator
+		}
+	}
+}

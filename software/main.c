@@ -4,19 +4,7 @@
 #include "ethernet.h"
 #include "main.h"
 
-Operator op;
-State state = MESSENGER;
-
 char leds = 0;
-
-int num1  = 0;
-int num2  = 0;
-
-unsigned char dest = 0;
-char message[1000] = {0};
-char* cursor = message;
-
-Message buffer[3];
 
 void display(char* string) {
 	uart_send_string(UART, string);
@@ -24,88 +12,6 @@ void display(char* string) {
 
 void display_char(char c) {
 	uart_send_char(UART, c);
-}
-
-State state_messenger(unsigned char c) {
-	display("\r\n> ");
-	return state_composer_1(c);
-}
-
-State state_composer_1(unsigned char c) {
-	if (IS_DIGIT(c)) {
-		dest <<= 4;
-		dest += (c-'0');
-		display_char(c);
-	}
-	else if (IS_HEXIT(c)) {
-		c &= 0xDF; // Make uppercase
-		dest <<= 4;
-		dest += (c-'A'+10);
-		display_char(c);
-	}
-	else if (c == '\r') { // Carriage-return
-		display_char(' ');
-		return COMPOSER_2;
-	}
-
-	return COMPOSER_1;
-}
-
-State state_composer_2(unsigned char c) {
-	if (c == '\r') {
-		eth_tx_packet(dest, message, cursor-message);
-		cursor = message;
-		dest = 0x00;
-		display("\r\n[Sent]\r\n");
-		return MESSENGER;
-	}
-	
-	*(cursor++) = c;
-	display_char(c);
-	return COMPOSER_2;
-}
-
-State state_num_1(unsigned char c) {
-	if (IS_DIGIT(c)) {
-		num1 = num1*10 + (c-'0');
-		display_char(c);
-	}
-	else {
-		switch (c) {
-			case '*': op = MULT;  display_char(' '); display_char(c); display_char(' '); return NUM_2;
-			case '+': op = PLUS;  display_char(' '); display_char(c); display_char(' '); return NUM_2;
-			case '-': op = MINUS; display_char(' '); display_char(c); display_char(' '); return NUM_2;
-			case '/': op = DIV;   display_char(' '); display_char(c); display_char(' '); return NUM_2;
-		}
-	}
-	return NUM_1;
-}
-
-State state_num_2(unsigned char c) {
-	if (IS_DIGIT(c)) {
-		num2 = num2*10 + (c-'0');
-		display_char(c);
-	}
-	else if (c == '=') { // '='
-		char output[11] = {0};
-	
-		switch (op) {
-			case PLUS:  asciify(num1+num2, 10, output); break;
-			case MINUS: asciify(num1-num2, 10, output); break;
-			case MULT:  asciify(num1*num2, 10, output); break;
-			case DIV:   asciify(hc_divide(num1,num2), 10, output); break;
-		}
-		
-		display(" = \n");
-		display(output);
-		display(".\r\n\t");
-
-		num1 = 0;
-		num2 = 0;
-		return NUM_1;
-	}
-	
-	return NUM_2;
 }
 
 void write_leds(char c) {
@@ -121,13 +27,17 @@ void inth_mac() {
 		short type   = (short)((*(packet+3) & 0xFFFF0000) >> 16U);
 		
 		if (type == 0x55AA) {
-			char dest    = (char)((*(packet+1) & 0x00FF0000) >> 16U);
-			char source  = (char)((*(packet+2) & 0x000000FF));
-			short length = (short)(*(packet+3) & 0x0000FFFF);
+			char dest        = (char)((*(packet+1) & 0x00FF0000) >> 16U);
+			char source      = (char)((*(packet+2) & 0x000000FF));
+			short stream     = (short)((*(packet+3) & 0x0000FFFF));
+			char samplerate  = (char)((*(packet+4) & 0xFF000000) >> 24U);
+			char samplewidth = (char)((*(packet+4) & 0x00FF0000) >> 16U);
+			int index        = (int) (*(packet+5));
+			int length       = (int) (*(packet+6));
 			char data[length+3];
 			
-			for (short i=0; i*4 < length; i++) {
-				unsigned int chunk = *(packet+4+i);
+			for (int i=0; i*4 < length; i++) {
+				unsigned int chunk = *(packet+7+i);
 				data[i*4]   = (char)((chunk & 0xFF000000) >> 24U);
 				data[i*4+1] = (char)((chunk & 0x00FF0000) >> 16U);
 				data[i*4+2] = (char)((chunk & 0x0000FF00) >>  8U);
@@ -135,19 +45,7 @@ void inth_mac() {
 			}
 			
 			mac_clear_rx_packet(packet);
-			
-			if (state == MESSENGER) {
-				eth_rx_packet(dest, source, data, length);
-			}
-			else {
-				Message m;
-				m.dest = dest;
-				m.source = source;
-				m.length = length;
-				strncpy(m.data, data, length > 1000 ? 1000 : length);
-				buffer[bufCursor % 3] = m;
-				bufCursor++;
-			}
+			eth_rx_frame(dest, source, stream, samplerate, samplewidth, index, length, data);
 		}
 		else {
 			mac_clear_rx_packet(packet);
@@ -157,41 +55,12 @@ void inth_mac() {
 
 void inth_uart() {
 	while (uart_check_char(UART)) {
-		switch (state) {
-			case NUM_1:      state =      state_num_1(uart_get_char(UART)); break;
-			case NUM_2:      state =      state_num_2(uart_get_char(UART)); break;
-			case MESSENGER:  state =  state_messenger(uart_get_char(UART)); break;
-			case COMPOSER_1: state = state_composer_1(uart_get_char(UART)); break;
-			case COMPOSER_2: state = state_composer_2(uart_get_char(UART)); break;
-		}
+		uart_get_char(UART);
 	}
 }
 
 void inth_switches() {
 	char switches = get_switches();
-	
-	if (TEST_BIT(switches, 0)) {
-		if (state == NUM_1 || state == NUM_2) {
-			mac_enable_interrupts();
-			display("\r\nMessenger:\r\n");
-			state = MESSENGER;
-			
-			// Empty buffer
-			for(int i=0; i<3; i++) {
-				if (buffer[i].data[0] != 0) {
-					eth_rx_packet(buffer[i].dest, buffer[i].source, buffer[i].data, buffer[i].length);
-					buffer[i].data[0] = 0;
-				}
-			}
-		}
-	}
-	else {
-		if (state == MESSENGER || state == COMPOSER_1 || state == COMPOSER_2) {
-			mac_disable_interrupts();
-			display("\r\nCalculator:\r\n\t");
-			state = NUM_1;
-		}
-	}
 	
 	write_leds((switches << 4) | (leds & 0x0F));
 	
