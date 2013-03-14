@@ -125,8 +125,8 @@ int main(void) {
 	intc_enable_interrupt(INTC_UART);
 	uart_enable_interrupts(UART);
 	
-	// Announce on network (so switches display broadcasts)
-	eth_tx_string(0xFF, "Announcing (Hello!)");
+	// Announce on network (so network switches learn device)
+	eth_tx_announce();
 	
 	return 0;
 }
