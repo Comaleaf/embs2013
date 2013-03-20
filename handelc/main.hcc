@@ -4,8 +4,8 @@
 #include "main.hch"
 
 mpram {
-    wom unsigned 12 Write[4096];
-    rom unsigned 12 Read[4096];
+	wom unsigned 12 Write[4096];
+	rom unsigned 12 Read[4096];
 } buffer with {block=1};
 
 unsigned 12 cursor_write;
@@ -15,35 +15,35 @@ unsigned 12 buffer_size;
 void main(void) {
 	unsigned 32 datin;
 
-    cursor_write = 0;
-    cursor_read = 0;
-    buffer_size = 0;
+	cursor_write = 0;
+	cursor_read = 0;
+	buffer_size = 0;
     
 	initialise();
 	
 	par {
 		uart_driver();
 		fsl_driver();
-        dac_driver();
-        while (1) {
-            fsl_read ? datin;
-            while (buffer_size == 4095) delay;
-            par {
-                buffer.Write[cursor_write] = datin <- 12;
-                cursor_write++;
-                buffer_size++;
-            }
-        }
-        seq {
-            while (buffer_size < 4095) delay;
-            while (1) {
-                while (buffer_size == 0) delay;
-                par {
-                    dac8KHz_write ! buffer.Read[cursor_read];
-                    cursor_read++;
-                    buffer_size--;
-                }
-            }
-        }
+		dac_driver();
+		while (1) {
+			fsl_read ? datin;
+			while (buffer_size == 4095) delay;
+			par {
+				buffer.Write[cursor_write] = datin <- 12;
+				cursor_write++;
+				buffer_size++;
+			}
+		}
+		seq {
+			while (buffer_size < 4095) delay;
+			while (1) {
+				while (buffer_size == 0) delay;
+				par {
+					dac8KHz_write ! buffer.Read[cursor_read];
+					cursor_read++;
+					buffer_size--;
+				}
+			}
+		}
 	}
 }
