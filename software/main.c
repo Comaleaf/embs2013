@@ -4,19 +4,12 @@
 #include "ethernet.h"
 #include "main.h"
 
-char leds = 0;
-
 void display(char* string) {
 	uart_send_string(UART, string);
 }
 
 void display_char(char c) {
 	uart_send_char(UART, c);
-}
-
-void write_leds(char c) {
-	leds = c;
-	set_leds(c);
 }
 
 void inth_mac() {
@@ -57,11 +50,11 @@ void inth_uart() {
 	}
 }
 
-void inth_switches() {
-	char switches = get_switches();
-	
-	write_leds((switches << 4) | (leds & 0x0F));
-	
+void inth_switches() {	
+	state.channel = (0x7 & get_switches()) + 1;
+	state.rate    = 0;
+	set_leds(1 << state.channel);
+	hc_clear_buffer();
 	switches_clear_interrupt();
 }
 
@@ -69,7 +62,7 @@ DECLARE_INTERRUPT_HANDLER(int_handler);
 void int_handler() {
 	int vec = intc_get_vector();
 	
-	switch(vec) {
+	switch (vec) {
 		case INTC_MAC:      inth_mac();      break;
 		case INTC_SWITCHES: inth_switches(); break;
 		case INTC_UART:     inth_uart();     break;
