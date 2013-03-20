@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
+set +x
 
 cflags="-Wall -O2 -std=gnu99"
-sourcefiles="software/main.c software/hc.c software/ethernet.c software/utilities.c software/vlab.c software/interrupts.s"
+sourcefiles="software/main.c software/ethernet.c software/hc.c software/utilities.c software/vlab.c software/interrupts.s"
+handelcfiles="main.hcc dac.hcc fsl.hcc vlab.hcc"
 
 mhsfile=system.mhs
 part="xc3s500efg320-4"
@@ -10,6 +12,7 @@ bitfile=implementation/system.bit
 bmmfile=implementation/system_bd.bmm
 finalbitfile=system-programmed.bit
 libusbdriver=/opt/usb-driver/libusb-driver.so
+pdklocation=/usr/share/mentor/pdk
 
 function usage {
 	echo "FPGA Usage:"
@@ -32,6 +35,7 @@ function compile {
 	echo \* Compiling...
 	mb-gcc $cflags $sourcefiles -o software/microblaze_0.elf
 		
+	set +e
 	elfcheck -hw system.xml -p $part -pe microblaze_0 software/microblaze_0.elf > elfcheck.log 2>&1
 	if grep --quiet "elfcheck passed." elfcheck.log
 	then
@@ -40,13 +44,13 @@ function compile {
 		echo "ERROR: elfcheck failed!"
 		cat elfcheck.log
 		exit 1
-	fi	
+	fi
+	
 
 	echo \* Executable size:
 	mb-size software/microblaze_0.elf
 
 	echo \* Programming bitfile \"$bitfile\" with \"software/microblaze_0.elf\"...
-	set +e
 	data2mem -bm $bmmfile -bt $bitfile -bd software/microblaze_0.elf tag microblaze_0 -o b $finalbitfile
 	
 	if [ "$?" -ne 0 ]; then echo data2mem failed; exit 1; fi
@@ -111,7 +115,8 @@ case "$1" in
 		
 		#Copy the appropriate makefile (assume that the presence of backslashes in XILINX_EDK means we are on Windows)
 		rm -f system.make
-		echo "$XILINX_EDK" | grep -q '\\'
+		set +e
+		echo "$XILINX_EDK" | grep '\\'
 		if [ $? -eq 0 ]
 		then
 			echo "Using Windows makefile"
@@ -120,7 +125,8 @@ case "$1" in
 			echo "Using Linux makefile"
 			cp system.makelin system.make
 		fi
-
+		set -e
+		
 		#Run the tools
 		make -f system.make bits
 
@@ -148,6 +154,12 @@ case "$1" in
 		mv -f platgen.opt __xps/platgen.opt
 		mv -f xpsxflow.opt __xps/xpsxflow.opt
 		set -e
+	;;
+	
+	'handelc' )
+		cd handelc
+		handelc -edif -f XilinxSpartan3E -p $part -L $pdklocation/hardware/lib -I $pdklocation/hardware/include stdlib.hcl -o ../implementation/userhandelc.edf $handelcfiles
+		cd ..
 	;;
 	
 	'program' )
