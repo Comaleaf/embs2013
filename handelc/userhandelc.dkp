@@ -20,4 +20,6 @@
  <document type="hch" name="fsl.hch" />
  <document type="hcc" name="math.hcc" />
  <document type="hch" name="math.hch" />
+ <document type="hcc" name="dac.hcc" />
+ <document type="hch" name="dac.hch" />
 </celdev_project>

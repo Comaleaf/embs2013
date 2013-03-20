@@ -28,6 +28,7 @@ void inth_uart();
 
 // Outputs
 void display(char* string);
+void display_char(char c);
 void write_leds(char leds);
 
 int main(void);

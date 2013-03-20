@@ -1,5 +1,6 @@
 #include "vlab.h"
 #include "hc.h"
+#include "main.h"
 
 void hc_send_char(unsigned char c) {
 	putfslx(HC_OP_SEND_CHAR(c), 0, FSL_BLOCKING);

@@ -23,9 +23,9 @@ void eth_tx_announce() {
 }
 
 void eth_rx_frame(unsigned char dest, unsigned char source, short stream, char samplerate, char samplewidth, int index, int length, char* data) {
-	if (samplerate == 1 && samplewidth == 1 && index == 3) {
+	if (samplerate == 1 && samplewidth == 1 && stream == 4) {
 		while (length-- > 0) {
-			hc_send_char(*(data++))
+			hc_send_char(*(data++));
 		}
 	}
 }

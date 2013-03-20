@@ -5,7 +5,7 @@ chan <unsigned 32> fsl_write;
 chan <unsigned 32> fsl_read;
 
 void fsl_driver() {
-	unsigned 32 in, out;
+	unsigned 32 inp, out;
 	
 	par {
 		// Receive
@@ -13,10 +13,10 @@ void fsl_driver() {
 			if (FSL_FROM_MB_EXISTS) {
 				FSL_FROM_MB_READ = 1;
 				par {
-					in = FSL_FROM_MB_DATA;
+					inp = FSL_FROM_MB_DATA;
 					FSL_FROM_MB_READ = 0;
 				}
-				fsl_read ! in;
+				fsl_read ! inp;
 			}
 			else {
 				delay; // for timing

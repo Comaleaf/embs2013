@@ -13,8 +13,18 @@
   <item expanded="false" />
   <item expanded="false" />
   <item expanded="false" />
+  <item expanded="false" />
+  <item expanded="false" />
  </workspaceview>
  <windowlist>
+  <window filepath="dac.hcc" type="SourceEdit" >
+   <size width="577" height="472" maximised="0" />
+   <position x="266" y="179" />
+  </window>
+  <window filepath="dac.hch" type="SourceEdit" >
+   <size width="577" height="472" maximised="0" />
+   <position x="0" y="179" />
+  </window>
   <window filepath="fsl.hcc" type="SourceEdit" >
    <size width="472" height="472" maximised="0" />
    <position x="0" y="179" />
@@ -24,7 +34,7 @@
    <position x="214" y="179" />
   </window>
   <window filepath="main.hcc" type="SourceEdit" >
-   <size width="701" height="689" maximised="1" />
+   <size width="1070" height="689" maximised="1" />
    <position x="-7" y="-30" />
   </window>
   <window filepath="main.hch" type="SourceEdit" >

@@ -20,11 +20,9 @@ void write_leds(char c) {
 }
 
 void inth_mac() {
-	static int bufCursor = 0;
-	
 	volatile int* packet;
 	while ((packet = mac_packet_ready())) {
-		short type   = (short)((*(packet+3) & 0xFFFF0000) >> 16U);
+		short type = (short)((*(packet+3) & 0xFFFF0000) >> 16U);
 		
 		if (type == 0x55AA) {
 			char dest        = (char)((*(packet+1) & 0x00FF0000) >> 16U);
