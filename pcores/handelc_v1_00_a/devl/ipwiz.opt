@@ -1,0 +1,12 @@
+-batch 
+-create handelc 
+-ver 1.00.a 
+-dir /home/iang/Dropbox/Work/EMBS/embs-pack-v1/ 
+-lang vhdl 
+-bus fsl ms 
+-xps 
+-totalin 8
+-totalout 8
+-argin 1
+-argout 1
+-desc "Handel-C core"
