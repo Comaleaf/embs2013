@@ -7,10 +7,10 @@ void dac_driver() {
 	
 	while (1) {
 		prialt {
-			case dac8KHz_write ? sample:  i = 6250; break;
-			case dac11KHz_write ? sample: i = 4535; break;
-			case dac22KHz_write ? sample: i = 2267; break;
-			case dac44KHz_write ? sample: i = 1134; break;
+			case  dac8KHz_write ? sample: i = 6249; break;
+			case dac11KHz_write ? sample: i = 4534; break;
+			case dac22KHz_write ? sample: i = 2266; break;
+			case dac44KHz_write ? sample: i = 1133; break;
 		}
 		par {
 			dac_write_to_output(0x0, sample);

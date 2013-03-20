@@ -1,10 +1,10 @@
 #ifndef __DAC_HCH_
 #define __DAC_HCH_
 
-chan <unsigned 12> dac8KHz_write;
-chan <unsigned 12> dac11KHz_write;
-chan <unsigned 12> dac22KHz_write;
-chan <unsigned 12> dac44KHz_write;
+extern chan <unsigned 12> dac8KHz_write;
+extern chan <unsigned 12> dac11KHz_write;
+extern chan <unsigned 12> dac22KHz_write;
+extern chan <unsigned 12> dac44KHz_write;
 
 void dac_driver();
 
