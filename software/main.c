@@ -65,33 +65,12 @@ void inth_switches() {
 	switches_clear_interrupt();
 }
 
-void inth_buttons() {
-	char buttons = get_buttons();
-	
-	if      (TEST_BIT(buttons, 0)) write_leds(leds & 0xF0);
-	else if (TEST_BIT(buttons, 1)) write_leds(leds ^ 8);
-	else if (TEST_BIT(buttons, 2)) write_leds(leds ^ 4);
-	else if (TEST_BIT(buttons, 3)) write_leds(leds ^ 2);
-	else if (TEST_BIT(buttons, 4)) write_leds(leds ^ 1);
-	
-	buttons_clear_interrupt();
-}
-
-void inth_fsl() {
-	char output[10] = {0};
-	int rv;
-	getfslx(rv, 0, FSL_BLOCKING);
-	asciify(rv, 10, output);
-	display(output);
-}
-
 DECLARE_INTERRUPT_HANDLER(int_handler);
 void int_handler() {
 	int vec = intc_get_vector();
 	
 	switch(vec) {
 		case INTC_MAC:      inth_mac();      break;
-		case INTC_BUTTONS:  inth_buttons();  break;
 		case INTC_SWITCHES: inth_switches(); break;
 		case INTC_UART:     inth_uart();     break;
 	}
@@ -106,13 +85,6 @@ int main(void) {
 	eth_setup();
 	intc_enable_interrupt(INTC_MAC);
 	mac_enable_interrupts();
-	
-	// FSL
-	intc_enable_interrupt(INTC_FSL);
-	
-	// Buttons
-	intc_enable_interrupt(INTC_BUTTONS);
-	buttons_enable_interrupts();
 	
 	// Switches
 	intc_enable_interrupt(INTC_SWITCHES);
