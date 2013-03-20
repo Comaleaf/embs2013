@@ -41,14 +41,6 @@
    <size width="579" height="290" maximised="0" />
    <position x="0" y="89" />
   </window>
-  <window filepath="math.hcc" type="SourceEdit" >
-   <size width="472" height="472" maximised="0" />
-   <position x="214" y="0" />
-  </window>
-  <window filepath="math.hch" type="SourceEdit" >
-   <size width="472" height="472" maximised="0" />
-   <position x="214" y="0" />
-  </window>
   <window filepath="vlab.hcc" type="SourceEdit" >
    <size width="1129" height="669" maximised="0" />
    <position x="117" y="24" />

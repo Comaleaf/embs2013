@@ -1,8 +1,0 @@
-#ifndef __MATH_HCH_
-#define __MATH_HCH_
-
-inline unsigned 32 collatz(unsigned 32 n);
-unsigned 32 counting_division(unsigned 32 n, unsigned 32 d);
-//unsigned 32 long_division(unsigned 32 n, unsigned 32 d);
-
-#endif
