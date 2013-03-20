@@ -5,9 +5,8 @@
 #define HC_16BIT 2
 #define HC_CLEAR 4
 
-#define HC_OPERAND(opcode) (0x7FFFFFFF & opcode)
-#define HC_OP_SEND_CHAR(c) (0x10000000|(0x000000FF & c))
-#define HC_OP_SEND_SHORT(s) (0x20000000|(0x0000FFFF & s))
+#define HC_PUT(opcode)          putfslx(opcode, 0, FSL_BLOCKING)
+#define HC_PUT(opcode, operand) putfslx((opcode<<7)|(0x7FFFFFFF&operand), 0, FSL_BLOCKING)
 
 void hc_send_char(unsigned char c);
 void hc_send_short(short s);
