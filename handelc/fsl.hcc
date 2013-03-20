@@ -1,41 +1,23 @@
 #include "vlab.hch"
 #include "fsl.hch"
 
-chan <unsigned 32> fsl_write;
 chan <unsigned 32> fsl_read;
 
 void fsl_driver() {
-	unsigned 32 inp, out;
+	unsigned 32 data_in;
 	
-	par {
-		// Receive
-		while (1) {
-			if (FSL_FROM_MB_EXISTS) {
-				FSL_FROM_MB_READ = 1;
-				par {
-					inp = FSL_FROM_MB_DATA;
-					FSL_FROM_MB_READ = 0;
-				}
-				fsl_read ! inp;
+	// Receive
+	while (1) {
+		if (FSL_FROM_MB_EXISTS) {
+			FSL_FROM_MB_READ = 1;
+			par {
+				data_in = FSL_FROM_MB_DATA;
+				FSL_FROM_MB_READ = 0;
 			}
-			else {
-				delay; // for timing
-			}
+			fsl_read ! data_in;
 		}
-		// Transmit
-		while (1) {
-			if (FSL_TO_MB_FULL == 0) {
-				fsl_write ? out;
-			
-				par {
-					FSL_TO_MB_DATA = out;
-					FSL_TO_MB_WRITE = 1;
-				}
-				FSL_TO_MB_WRITE = 0;
-			}
-			else {
-				delay;
-			}
+		else {
+			delay; // for timing
 		}
 	}
 }

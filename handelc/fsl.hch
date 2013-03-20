@@ -1,7 +1,6 @@
 #ifndef __FSL_HCH_
 #define __FSL_HCH_
 
-extern chan <unsigned 32> fsl_write;
 extern chan <unsigned 32> fsl_read;
 
 void fsl_driver();
