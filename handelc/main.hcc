@@ -3,20 +3,35 @@
 #include "dac.hch"
 #include "main.hch"
 
+#define RAM 8192
+
 mpram {
-	wom unsigned 12 Write[4096];
-	rom unsigned 12 Read[4096];
+	wom unsigned 12 write[RAM];
+	rom unsigned 12 read[RAM];
 } buffer with {block=1};
 
-unsigned 12 cursor_write;
-unsigned 12 cursor_read;
-unsigned 12 buffer_size;
+struct {
+	unsigned 13 write;
+	unsigned 13 read;
+} cursor;
+
+unsigned 13 buffer_size;
+
+void buffer_append(unsigned 12 in) {
+	while (buffer_size == RAM-1) delay; // don't overwrite buffer
+	par {
+		buffer.write[cursor.write] = in;
+		cursor.write++;
+		buffer_size++;
+	}
+}
 
 void main(void) {
-	unsigned 32 datin;
-
-	cursor_write = 0;
-	cursor_read = 0;
+	unsigned 32 fsl_data;
+	unsigned 12 buffer_in;
+	
+	cursor.write = 0;
+	cursor.read = 0;
 	buffer_size = 0;
     
 	initialise();
@@ -26,21 +41,34 @@ void main(void) {
 		fsl_driver();
 		dac_driver();
 		while (1) {
-			fsl_read ? datin;
-			while (buffer_size == 4095) delay;
-			par {
-				buffer.Write[cursor_write] = datin <- 12;
-				cursor_write++;
-				buffer_size++;
+			fsl_read ? fsl_data;
+			
+			if (fsl_data[31:30] == OP_8BIT) {
+				buffer_append(fsl_data <- 12);
+			}
+			else if (fsl_data[31:30] == OP_16BIT) {
+				if (fsl_data[15] == 1) {
+					buffer_append(fsl_data[14:3]);
+				}
+				else {
+					buffer_append(fsl_data[15:5] @ 0);
+				}
+			}
+			else {
+				par {
+					cursor.write = 0;
+					cursor.read = 0;
+					buffer_size = 0;
+				}
 			}
 		}
 		seq {
-			while (buffer_size < 4095) delay;
+			while (buffer_size < RAM-1) delay; // wait until buffer is full
 			while (1) {
 				while (buffer_size == 0) delay;
 				par {
-					dac8KHz_write ! buffer.Read[cursor_read];
-					cursor_read++;
+					dac8KHz_write ! buffer.read[cursor.read];
+					cursor.read++;
 					buffer_size--;
 				}
 			}

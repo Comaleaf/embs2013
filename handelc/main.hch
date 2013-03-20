@@ -1,6 +1,10 @@
 #ifndef __MAIN_HCH_
 #define __MAIN_HCH_
 
+#define OP_MODE  0
+#define OP_8BIT  1
+#define OP_16BIT 2
+
 extern clk_port;
 set clock = internal CLK;
 
