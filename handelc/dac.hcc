@@ -2,19 +2,19 @@
 #include "vlab.hch"
 
 void dac_driver() {
-    unsigned 12 sample;
-    unsigned 13 i;
-    
-    while (1) {
-        prialt {
-            case dac8KHz_write ? sample:  i = 6250; break;  
-            case dac11KHz_write ? sample: i = 4535; break;
-            case dac22KHz_write ? sample: i = 2267; break;
-            case dac44KHz_write ? sample: i = 1134; break;
-        }
-        par {
-            dac_write_to_output(0x0, sample);
-            while (i) i--; // assignment takes 1 cycle
-        }
-    }
+	unsigned 12 sample;
+	unsigned 13 i;
+	
+	while (1) {
+		prialt {
+			case dac8KHz_write ? sample:  i = 6250; break;
+			case dac11KHz_write ? sample: i = 4535; break;
+			case dac22KHz_write ? sample: i = 2267; break;
+			case dac44KHz_write ? sample: i = 1134; break;
+		}
+		par {
+			dac_write_to_output(0x0, sample);
+			while (i) i--; // assignment takes 1 cycle
+		}
+	}
 }
