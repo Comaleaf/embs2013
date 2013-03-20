@@ -3,7 +3,7 @@
 #include "dac.hch"
 #include "main.hch"
 
-#define RAM 8192
+#define RAM 4096
 
 mpram {
 	wom unsigned 12 write[RAM];
@@ -11,11 +11,11 @@ mpram {
 } buffer with {block=1};
 
 struct {
-	unsigned 13 write;
-	unsigned 13 read;
+	unsigned 12 write;
+	unsigned 12 read;
 } cursor;
 
-unsigned 13 buffer_size;
+unsigned 12 buffer_size;
 
 void buffer_append(unsigned 12 in) {
 	while (buffer_size == RAM-1) delay; // don't overwrite buffer
