@@ -1,12 +1,14 @@
 #include "vlab.h"
 #include "utilities.h"
 #include "main.h"
+#include "hc.h"
 #include "ethernet.h"
 
 void eth_setup() {
 	// Set MAC address
 	MAC_TX1[0] = 0x00112233;
 	MAC_TX1[1] = 0x00160000;
+	
 	mac_set_mac_address();
 }
 
@@ -22,8 +24,8 @@ void eth_tx_announce() {
 
 void eth_rx_frame(unsigned char dest, unsigned char source, short stream, char samplerate, char samplewidth, int index, int length, char* data) {
 	if (samplerate == 1 && samplewidth == 1 && index == 3) {
-		for(int i=0; i < length; i++) {
-			putfslx(data[i], 0, FSL_BLOCKING); // Send numerator
+		while (length-- > 0) {
+			hc_send_char(*(data++))
 		}
 	}
 }

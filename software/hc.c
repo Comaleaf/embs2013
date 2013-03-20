@@ -1,10 +1,10 @@
 #include "vlab.h"
 #include "hc.h"
 
-int hc_divide(int n, int d) {
-	int r;
-	putfslx(HC_OP_DIVIDE(n), 0, FSL_BLOCKING); // Send numerator
-	putfslx(HC_OP_DIVIDE(d), 0, FSL_BLOCKING); // Send denominator.
-	getfslx(r, 0, FSL_BLOCKING); // Get the result
-	return HC_OPERAND(r);
+void hc_send_char(unsigned char c) {
+	putfslx(HC_OP_SEND_CHAR(c), 0, FSL_BLOCKING);
+}
+
+void hc_send_short(short s) {
+	putfslx(HC_OP_SEND_SHORT(s), 0, FSL_BLOCKING);	
 }

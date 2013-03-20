@@ -1,14 +1,8 @@
 #ifndef __MAIN_HCH_
 #define __MAIN_HCH_
 
-#define OPCODE_DIVIDER  0x0
-
 extern clk_port;
 set clock = internal CLK;
-
-chan <unsigned 31> divider_read;
-
-void divider_driver();
 
 void main(void);
 

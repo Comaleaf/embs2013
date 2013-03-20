@@ -1,6 +1,9 @@
 #include "vlab.hch"
 #include "fsl.hch"
+#include "dac.hch"
 #include "main.hch"
+
+ram <unsigned 12> buffer;
 
 void main(void) {
 	unsigned 32 datin;
@@ -12,7 +15,7 @@ void main(void) {
 		fsl_driver();
 		while (1) {
 			fsl_read ? datin;
-			dac_write_to_output(0xF, datin <- 12);
+			dac_write ! (datin <- 12);
 		}
 	}
 }

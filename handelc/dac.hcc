@@ -1,0 +1,33 @@
+#include "dac.hch"
+
+void dac_driver() {
+	unsigned 12 sample;
+	dac_write ? sample;
+	dac_write_to_output(0xF, sample);
+}
+
+void dac8KHz_driver() {
+	unsigned 12 sample;
+	unsigned 13 i;
+	
+	i = 6250;
+	par {
+		seq {
+			dac8Hz_write ? sample;
+			dac_write ! sample;
+		}
+		while (i) i--; // assignment takes 1 cycle
+	}
+}
+
+void dac11KHz_driver() {
+	
+}
+
+void dac22KHz_driver() {
+	
+}
+
+void dac44KHz_driver() {
+	
+}
