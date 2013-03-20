@@ -27,11 +27,18 @@ void eth_rx_frame(unsigned char dest, unsigned char source, short stream, char s
 		if (rate != state.rate || width != state.width) {
 			state.rate = samplerate;
 			state.width = samplewidth;
-			hc_set_mode(state.rate, state.width);
+			hc_set_mode(state.rate);
 		}
 		
-		while (length-- > 0) {
-			hc_put_char(*(data++));
+		while (length > 0) {
+			if (state.width == HC_8BIT) {
+				hc_put_char(*(data++));
+				length--;
+			else {
+				hc_put_short(*(short*)data);
+				data += 2;
+				length -= 2;
+			}
 		}
 	}
 }
