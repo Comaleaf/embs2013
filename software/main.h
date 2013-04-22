@@ -1,11 +1,13 @@
 #ifndef __MAIN_H_
 #define __MAIN_H_
 
-extern struct {
+typedef struct {
 	char channel = 0;
 	char width   = 0;
 	char rate    = 0;
-} state;
+} State;
+
+extern State state;
 
 // Interrupt handlers
 void int_handler();
