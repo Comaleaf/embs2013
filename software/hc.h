@@ -5,7 +5,6 @@
 #define HC_8BIT  1
 #define HC_16BIT 2
 
-#define HC_PUT(opcode)          putfslx(opcode, 0, FSL_BLOCKING)
 #define HC_PUT(opcode, operand) putfslx((opcode<<30U)|(0x3FFFFFFF&operand), 0, FSL_BLOCKING)
 
 void hc_put_char(unsigned char c);
