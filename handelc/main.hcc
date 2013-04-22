@@ -48,21 +48,17 @@ void main(void) {
 				buffer_append(fsl_data <- 12); // get least significant 12 bits
 			}
 			else if (fsl_data \\ 30 == OP_16BIT) {
-				if (fsl_data[15] == 1) { // is the number negative?
-					buffer_append(0 @ fsl_data[14:4]); // use the negative part
-				}
-				else {
-					buffer_append(fsl_data[14:3]); // use double the positive part (left shift)
-				}
+				// use parity bit as a 'pivot' to turn an unsigned integer around. positive side becomes upper half of unsigned integer.
+				buffer_append(~fsl_data[15] @ fsl_data[14:4]); // use the negative part
 			}
 			else {
 				par {
-                    switch (fsl_data <- 3) {
-                        case 1: sample_rate = CYCLES_8K;  break;
-                        case 2: sample_rate = CYCLES_11K; break;
-                        case 3: sample_rate = CYCLES_22K; break;
-                        case 4: sample_rate = CYCLES_44K; break;
-                    }
+					switch (fsl_data <- 3) {
+						case 1: sample_rate = CYCLES_8K;  break;
+						case 2: sample_rate = CYCLES_11K; break;
+						case 3: sample_rate = CYCLES_22K; break;
+						case 4: sample_rate = CYCLES_44K; break;
+					}
 					cursor.write = 0;
 					cursor.read = 0;
 					buffer_size = 0;
