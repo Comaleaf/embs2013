@@ -1,13 +1,11 @@
 #ifndef __MAIN_H_
 #define __MAIN_H_
 
-typedef struct {
+struct {
 	char channel;
 	char width;
 	char rate;
-} State;
-
-State state;
+} state;
 
 // Interrupt handlers
 void int_handler();
