@@ -7,7 +7,7 @@ typedef struct {
 	char rate;
 } State;
 
-extern State state;
+State state;
 
 // Interrupt handlers
 void int_handler();
