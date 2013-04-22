@@ -2,9 +2,9 @@
 #define __MAIN_H_
 
 typedef struct {
-	char channel = 0;
-	char width   = 0;
-	char rate    = 0;
+	char channel;
+	char width;
+	char rate;
 } State;
 
 extern State state;
