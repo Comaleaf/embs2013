@@ -44,14 +44,14 @@ void main(void) {
 			fsl_read ? fsl_data;
 			
 			if (fsl_data[31:30] == OP_8BIT) {
-				buffer_append(fsl_data <- 12);
+				buffer_append(fsl_data <- 12); // get least significant 12 bits
 			}
 			else if (fsl_data[31:30] == OP_16BIT) {
-				if (fsl_data[15] == 1) {
-					buffer_append(fsl_data[14:3]);
+				if (fsl_data[15] == 1) { // is the number negative?
+					buffer_append(fsl_data[14:3]); // use the negative part
 				}
 				else {
-					buffer_append(fsl_data[15:5] @ 0);
+					buffer_append(fsl_data[15:5] @ 0); // use double the positive part (left shift)
 				}
 			}
 			else {
