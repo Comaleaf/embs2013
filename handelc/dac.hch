@@ -1,10 +1,14 @@
 #ifndef __DAC_HCH_
 #define __DAC_HCH_
 
-extern chan <unsigned 12> dac8KHz_write;
-extern chan <unsigned 12> dac11KHz_write;
-extern chan <unsigned 12> dac22KHz_write;
-extern chan <unsigned 12> dac44KHz_write;
+chan <unsigned 12> dac_write;
+
+#define CYCLES_8K  6249
+#define CYCLES_11K 4534
+#define CYCLES_22K 2266
+#define CYCLES_44K 1133
+
+unsigned 13 sample_rate;
 
 void dac_driver();
 

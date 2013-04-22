@@ -53,7 +53,7 @@ void inth_uart() {
 void inth_switches() {	
 	state.channel = (0x7 & get_switches()) + 1;
 	state.rate    = 0;
-	set_leds(1 << state.channel);
+	set_leds(1 << (state.channel-1));
 	switches_clear_interrupt();
 }
 

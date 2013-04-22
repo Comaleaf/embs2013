@@ -30,6 +30,7 @@ void main(void) {
 	unsigned 32 fsl_data;
 	unsigned 12 buffer_in;
 	
+    sample_rate = CYCLES_8K;
 	cursor.write = 0;
 	cursor.read = 0;
 	buffer_size = 0;
@@ -43,19 +44,25 @@ void main(void) {
 		while (1) {
 			fsl_read ? fsl_data;
 			
-			if (fsl_data[31:30] == OP_8BIT) {
+			if (fsl_data \\ 30 == OP_8BIT) {
 				buffer_append(fsl_data <- 12); // get least significant 12 bits
 			}
-			else if (fsl_data[31:30] == OP_16BIT) {
+			else if (fsl_data \\ 30 == OP_16BIT) {
 				if (fsl_data[15] == 1) { // is the number negative?
-					buffer_append(fsl_data[14:3]); // use the negative part
+					buffer_append(0 @ fsl_data[14:4]); // use the negative part
 				}
 				else {
-					buffer_append(fsl_data[15:5] @ 0); // use double the positive part (left shift)
+					buffer_append(fsl_data[14:3]); // use double the positive part (left shift)
 				}
 			}
 			else {
 				par {
+                    switch (fsl_data <- 3) {
+                        case 1: sample_rate = CYCLES_8K;  break;
+                        case 2: sample_rate = CYCLES_11K; break;
+                        case 3: sample_rate = CYCLES_22K; break;
+                        case 4: sample_rate = CYCLES_44K; break;
+                    }
 					cursor.write = 0;
 					cursor.read = 0;
 					buffer_size = 0;
@@ -67,7 +74,7 @@ void main(void) {
 			while (1) {
 				while (buffer_size == 0) delay;
 				par {
-					dac8KHz_write ! buffer.read[cursor.read];
+					dac_write ! buffer.read[cursor.read];
 					cursor.read++;
 					buffer_size--;
 				}
