@@ -4,14 +4,6 @@
 #include "ethernet.h"
 #include "main.h"
 
-void display(char* string) {
-	uart_send_string(UART, string);
-}
-
-void display_char(char c) {
-	uart_send_char(UART, c);
-}
-
 void inth_mac() {
 	volatile int* packet;
 	while ((packet = mac_packet_ready())) {
@@ -25,7 +17,7 @@ void inth_mac() {
 			int length    = (int) (*(packet+6));
 			
 			if (stream == active_channel) {
-				hc_new_packet(has_switched, width, rate, index, length);
+				hc_new_packet(should_reset, width, rate, index, length);
 				
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
@@ -34,6 +26,7 @@ void inth_mac() {
 		}
 		
 		mac_clear_rx_packet(packet);
+		should_reset = 0;
 	}
 }
 
@@ -44,7 +37,8 @@ void inth_uart() {
 }
 
 void inth_switches() {	
-	active_channel  = (0x7 & get_switches()) + 1;
+	should_reset = 1;
+	active_channel = (0x7 & get_switches()) + 1;
 	
 	set_leds(1 << (state.channel-1));
 	switches_clear_interrupt();
