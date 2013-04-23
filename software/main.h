@@ -1,11 +1,8 @@
 #ifndef __MAIN_H_
 #define __MAIN_H_
 
-struct {
-	char channel;
-	char width;
-	char rate;
-} state;
+char has_switched;
+char active_channel;
 
 // Interrupt handlers
 void int_handler();

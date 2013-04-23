@@ -1,15 +1,17 @@
 #include "vlab.h"
 #include "hc.h"
-#include "main.h"
 
-void hc_put_char(unsigned char c) {
-	HC_PUT(HC_8BIT, c);
+void hc_new_packet(char has_switched, char width, char rate, int index, int length) {
+	int data;
+	data = has_switched;
+	data = (data<<1) + width-1;
+	data = (data<<2) + rate-1;
+	data = (data<<14) + index;
+	data = (data<<14) + length;
+	
+	hc_put(data);
 }
 
-void hc_put_short(short s) {
-	HC_PUT(HC_16BIT, s);
-}
-
-void hc_set_mode(char rate, char width) {
-	HC_PUT(HC_MODE, rate);
+void hc_put(int data) {
+	putfslx(data, 0, FSL_BLOCKING);
 }

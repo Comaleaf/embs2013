@@ -18,29 +18,22 @@ void inth_mac() {
 		short type = (short)((*(packet+3) & 0xFFFF0000) >> 16U);
 		
 		if (type == 0x55AA) {
-			char dest        = (char)((*(packet+1) & 0x00FF0000) >> 16U);
-			char source      = (char)((*(packet+2) & 0x000000FF));
-			short stream     = (short)((*(packet+3) & 0x0000FFFF));
-			char samplerate  = (char)((*(packet+4) & 0xFF000000) >> 24U);
-			char samplewidth = (char)((*(packet+4) & 0x00FF0000) >> 16U);
-			int index        = (int) (*(packet+5));
-			int length       = (int) (*(packet+6));
-			char data[length+3];
+			short stream  = (short)((*(packet+3) & 0x0000FFFF));
+			char rate     = (char)((*(packet+4) & 0xFF000000) >> 24U);
+			char width    = (char)((*(packet+4) & 0x00FF0000) >> 16U);
+			int index     = (int) (*(packet+5));
+			int length    = (int) (*(packet+6));
 			
-			for (int i=0; i*4 < length; i++) {
-				unsigned int chunk = *(packet+7+i);
-				data[i*4]   = (char)((chunk & 0xFF000000) >> 24U);
-				data[i*4+1] = (char)((chunk & 0x00FF0000) >> 16U);
-				data[i*4+2] = (char)((chunk & 0x0000FF00) >>  8U);
-				data[i*4+3] = (char)((chunk & 0x000000FF));
+			if (stream == active_channel) {
+				hc_new_packet(has_switched, width, rate, index, length);
+				
+				for (int i=0; i < length/4; i++) {
+					hc_put(*(packet+7+i));
+				}
 			}
-			
-			mac_clear_rx_packet(packet);
-			eth_rx_frame(dest, source, stream, samplerate, samplewidth, index, length, data);
 		}
-		else {
-			mac_clear_rx_packet(packet);
-		}
+		
+		mac_clear_rx_packet(packet);
 	}
 }
 
@@ -51,8 +44,8 @@ void inth_uart() {
 }
 
 void inth_switches() {	
-	state.channel = (0x7 & get_switches()) + 1;
-	state.rate    = 0;
+	active_channel  = (0x7 & get_switches()) + 1;
+	
 	set_leds(1 << (state.channel-1));
 	switches_clear_interrupt();
 }

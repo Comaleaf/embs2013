@@ -5,6 +5,11 @@
 #define OP_8BIT  1
 #define OP_16BIT 2
 
+unsigned 1 sample_width;
+unsigned 2 sample_rate;
+unsigned 14 packet_index;
+unsigned 15 packet_length;
+
 extern clk_port;
 set clock = internal CLK;
 

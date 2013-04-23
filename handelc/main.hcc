@@ -42,30 +42,48 @@ void main(void) {
 		uart_driver();
 		fsl_driver();
 		dac_driver();
-		while (1) {
-			fsl_read ? fsl_data;
-			
-			if (fsl_data \\ 30 == OP_8BIT) {
-				buffer_append(fsl_data <- 12); // get least significant 12 bits
-			}
-			else if (fsl_data \\ 30 == OP_16BIT) {
-				// use parity bit as a 'pivot' to turn an unsigned integer around. positive side becomes upper half of unsigned integer.
-				buffer_append(~fsl_data[15] @ fsl_data[14:4]); // use the negative part
-			}
-			else {
-				par {
-					switch (fsl_data <- 3) {
-						case 1: sample_rate = CYCLES_8K;  break;
-						case 2: sample_rate = CYCLES_11K; break;
-						case 3: sample_rate = CYCLES_22K; break;
-						case 4: sample_rate = CYCLES_44K; break;
-					}
-					cursor.write = 0;
+        while (1) {
+            fsl_read ? fsl_data;
+            
+            if (packet_length == 0) {
+                // Receive a new packet
+                par {
+                    sample_width  = fsl_data[31];
+                    sample_rate   = fsl_data[30:29];
+                    packet_index  = fsl_data[28:14];
+                    packet_length = fsl_data[13:0];
+                    
+                    cursor.write = 0;
 					cursor.read = 0;
 					buffer_size = 0;
-				}
-			}
-		}
+                }
+            }
+            else {
+                while (buffer_size == RAM-1) delay;
+                switch (sample_width) {
+                    case WIDTH_8BIT:
+                        par {
+                            buffer.write[cursor.write]   = fsl_data[31:24] @ 0;
+                            buffer.write[cursor.write+1] = fsl_data[23:16] @ 0;
+                            buffer.write[cursor.write+2] = fsl_data[15:8] @ 0;
+                            buffer.write[cursor.write+3] = fsl_data[7:0] @ 0;
+                            cursor.write += 4;
+                            buffer_size += 4;
+                            packet_length -= 4;
+                        }
+                        break;
+                    case WIDTH_16BIT:
+                        par {
+                            buffer.write[cursor.write]   = fsl_data[31:21] @ ~fsl_data[20];
+                            buffer.write[cursor.write+1] = fsl_data[15:5] @ ~fsl_data[4];
+                            cursor.write += 2;
+                            buffer_size += 2;
+                            packet_length -= 4;
+                        }
+                        break;
+                }
+            }
+        }
 		while (1) {
 			// When buffer is empty, refill buffer before playing again (to prevent stuttering)
 			if (buffer_size >= RAM-1) {
@@ -74,6 +92,9 @@ void main(void) {
 			else if (buffer_size == 0) {
 				buffer_is_ready = 0;
 			}
+            else {
+                delay;
+            }
 		}
 		while (1) {
 			while (!buffer_is_ready) delay;
