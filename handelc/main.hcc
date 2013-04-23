@@ -15,6 +15,7 @@ struct {
 	unsigned 12 read;
 } cursor;
 
+unsigned 1 buffer_is_ready;
 unsigned 12 buffer_size;
 
 void buffer_append(unsigned 12 in) {
@@ -65,15 +66,21 @@ void main(void) {
 				}
 			}
 		}
-		seq {
-			while (buffer_size < RAM-1) delay; // wait until buffer is full
-			while (1) {
-				while (buffer_size == 0) delay;
-				par {
-					dac_write ! buffer.read[cursor.read];
-					cursor.read++;
-					buffer_size--;
-				}
+		while (1) {
+			// When buffer is empty, refill buffer before playing again (to prevent stuttering)
+			if (buffer_size >= RAM-1) {
+				buffer_is_ready = 1;
+			}
+			else if (buffer_size == 0) {
+				buffer_is_ready = 0;
+			}
+		}
+		while (1) {
+			while (!buffer_is_ready) delay;
+			par {
+				dac_write ! buffer.read[cursor.read];
+				cursor.read++;
+				buffer_size--;
 			}
 		}
 	}
