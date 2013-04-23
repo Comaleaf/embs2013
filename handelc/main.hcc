@@ -3,105 +3,96 @@
 #include "dac.hch"
 #include "main.hch"
 
-#define RAM 4096
-
-mpram {
-	wom unsigned 12 write[RAM];
-	rom unsigned 12 read[RAM];
-} buffer with {block=1};
-
-struct {
-	unsigned 12 write;
-	unsigned 12 read;
-} cursor;
-
-unsigned 1 buffer_is_ready;
-unsigned 12 buffer_size;
-
-void buffer_append(unsigned 12 in) {
-	while (buffer_size == RAM-1) delay; // don't overwrite buffer
-	par {
-		buffer.write[cursor.write] = in;
-		cursor.write++;
-		buffer_size++;
-	}
-}
+#define BUFFER_SIZE 4096
 
 void main(void) {
-	unsigned 32 fsl_data;
-	unsigned 12 buffer_in;
+	mpram {
+		wom unsigned 12 write[BUFFER_SIZE];
+		rom unsigned 12 read[BUFFER_SIZE];
+	} buffer with {block=1};
+
+	unsigned 12 cursor_write;
+	unsigned 12 cursor_read;
+	unsigned 12 buffer_size;
 	
-    sample_rate = CYCLES_8K;
-	cursor.write = 0;
-	cursor.read = 0;
+	unsigned 32 fsl_data;
+	
+	sample_rate = CYCLES_8K;
+	cursor_write = 0;
+	cursor_read = 0;
 	buffer_size = 0;
-    
+	
 	initialise();
 	
 	par {
 		uart_driver();
 		fsl_driver();
 		dac_driver();
-        while (1) {
-            fsl_read ? fsl_data;
+		// Process data from FSL into buffer
+		while (1) {
+			fsl_read ? fsl_data;
             
-            if (packet_length == 0) {
-                // Receive a new packet
-                par {
-                    sample_width  = fsl_data[31];
-                    sample_rate   = fsl_data[30:29];
-                    packet_index  = fsl_data[28:14];
-                    packet_length = fsl_data[13:0];
-                    
-                    cursor.write = 0;
-					cursor.read = 0;
+			// Receive a new packet
+			
+			if (fsl_data[31]) { // Reset bit
+				// Start buffer again from beginning
+				par {
+					cursor_write = 0;
+					cursor_read = 0;
 					buffer_size = 0;
-                }
-            }
-            else {
-                while (buffer_size == RAM-1) delay;
-                switch (sample_width) {
-                    case WIDTH_8BIT:
-                        par {
-                            buffer.write[cursor.write]   = fsl_data[31:24] @ 0;
-                            buffer.write[cursor.write+1] = fsl_data[23:16] @ 0;
-                            buffer.write[cursor.write+2] = fsl_data[15:8] @ 0;
-                            buffer.write[cursor.write+3] = fsl_data[7:0] @ 0;
-                            cursor.write += 4;
-                            buffer_size += 4;
-                            packet_length -= 4;
-                        }
-                        break;
-                    case WIDTH_16BIT:
-                        par {
-                            buffer.write[cursor.write]   = fsl_data[31:21] @ ~fsl_data[20];
-                            buffer.write[cursor.write+1] = fsl_data[15:5] @ ~fsl_data[4];
-                            cursor.write += 2;
-                            buffer_size += 2;
-                            packet_length -= 4;
-                        }
-                        break;
-                }
-            }
-        }
-		while (1) {
-			// When buffer is empty, refill buffer before playing again (to prevent stuttering)
-			if (buffer_size >= RAM-1) {
-				buffer_is_ready = 1;
+				}
 			}
-			else if (buffer_size == 0) {
-				buffer_is_ready = 0;
-			}
-            else {
-                delay;
-            }
-		}
-		while (1) {
-			while (!buffer_is_ready) delay;
+			
+			// Extract packet information from FSL word
 			par {
-				dac_write ! buffer.read[cursor.read];
-				cursor.read++;
-				buffer_size--;
+				sample_width  = fsl_data[30];
+				sample_rate   = fsl_data[29:28];
+				packet_index  = fsl_data[27:14];
+				packet_length = fsl_data[13:0];
+			}
+			
+			while (packet_length != 0) {
+				// Don't read samples when buffer is full
+				while (buffer_size == BUFFER_SIZE-1) delay;
+				
+				// Get next samples from FSL
+				fsl_read ? fsl_data;
+				
+				if (sample_width == WIDTH_8BIT) {
+					// Can read 4 samples at a time from FSL bus with 8-bit samples
+					par {
+						buffer.write[cursor_write]   = fsl_data[31:24] @ 0;
+						buffer.write[cursor_write+1] = fsl_data[23:16] @ 0;
+						buffer.write[cursor_write+2] = fsl_data[15:8] @ 0;
+						buffer.write[cursor_write+3] = fsl_data[7:0] @ 0;
+						
+						cursor_write += 4;
+						buffer_size += 4;
+						packet_length -= 4;
+					}
+				}
+				else {
+					// Can read 2 samples at a time from FSL bus with 16-bit samples
+					par {
+						buffer.write[cursor_write]   = fsl_data[31:21] @ ~fsl_data[20];
+						buffer.write[cursor_write+1] = fsl_data[15:5] @ ~fsl_data[4];
+						
+						cursor_write += 2;
+						buffer_size += 2;
+						packet_length -= 4;
+					}
+				}
+			}
+		}
+		// Consume buffer data and output on DAC
+		while (1) {
+			while (buffer_size < BUFFER_SIZE-1) delay;
+			while (buffer_size > 0) {
+				par {
+					dac_write ! buffer.read[cursor_read];
+					cursor_read++;
+					buffer_size--;
+				}
 			}
 		}
 	}
