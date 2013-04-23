@@ -4,6 +4,8 @@
 char should_reset;
 char active_channel;
 
+int previous_index;
+
 // Interrupt handlers
 void int_handler();
 void inth_mac();

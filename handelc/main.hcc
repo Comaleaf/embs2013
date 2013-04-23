@@ -31,7 +31,7 @@ void main(void) {
 		// Process data from FSL into buffer
 		while (1) {
 			fsl_read ? fsl_data;
-            
+			
 			// Receive a new packet
 			
 			if (fsl_data[31]) { // Reset bit
@@ -47,7 +47,7 @@ void main(void) {
 			par {
 				sample_width  = fsl_data[30];
 				sample_rate   = fsl_data[29:28];
-				packet_index  = fsl_data[27:14];
+				packet_offset = fsl_data[27:14];
 				packet_length = fsl_data[13:0];
 			}
 			

@@ -6,8 +6,8 @@
 
 unsigned 1 sample_width;
 unsigned 2 sample_rate;
-unsigned 14 packet_index;
 unsigned 14 packet_length;
+signed 14 packet_offset;
 
 extern clk_port;
 set clock = internal CLK;
