@@ -1,6 +1,17 @@
 #ifndef __HC_H_
 #define __HC_H_
 
+/*
+
+32 bits
+
+0 00 0000000000 0000000000000000000
+] [] [offset]   [length           ]
+width
+  rate
+
+*/
+
 #define HC_MODE  0
 #define HC_8BIT  1
 #define HC_16BIT 2
