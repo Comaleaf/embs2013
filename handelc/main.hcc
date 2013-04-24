@@ -5,19 +5,16 @@
 
 #define BUFFER_SIZE 4096
 
-void main(void) {
-	mpram {
-		wom unsigned 12 write[BUFFER_SIZE];
-		rom unsigned 12 read[BUFFER_SIZE];
-	} buffer with {block=1};
+mpram {
+	wom unsigned 12 write[BUFFER_SIZE];
+	rom unsigned 12 read[BUFFER_SIZE];
+} buffer with {block=1};
 
-	unsigned 12 cursor_write;
-	unsigned 12 cursor_read;
-	unsigned 12 buffer_size;
-	
-	unsigned 32 fsl_data;
-	
-	sample_rate = CYCLES_8K;
+unsigned 12 cursor_write;
+unsigned 12 cursor_read;
+unsigned 12 buffer_size;
+
+void main(void) {	
 	cursor_write = 0;
 	cursor_read = 0;
 	buffer_size = 0;
@@ -28,71 +25,87 @@ void main(void) {
 		uart_driver();
 		fsl_driver();
 		dac_driver();
-		// Process data from FSL into buffer
-		while (1) {
+		fsl_to_buffer_driver();
+		buffer_to_dac_driver();
+	}
+}
+
+void fsl_to_buffer_driver() {
+	unsigned 32 fsl_data;
+	
+	// Process data from FSL into buffer
+    while (1) {
+		fsl_read ? fsl_data;
+		
+		// Receive a new packet
+		
+		if (fsl_data[31]) { // Reset bit
+			// Start buffer again from beginning
+			par {
+				cursor_write = 0;
+				cursor_read = 0;
+				buffer_size = 0;
+			}
+		}
+		
+		// Extract packet information from FSL word
+		par {
+			sample_width  = fsl_data[30];
+			packet_offset = (signed) fsl_data[27:14];
+			packet_length = fsl_data[13:0];
+			
+			switch (fsl_data[29:28]) {
+				case RATE_8K:  sample_rate = 6249; break;
+				case RATE_11K: sample_rate = 4534; break;
+				case RATE_22K: sample_rate = 2266; break;
+				case RATE_44K: sample_rate = 1133; break;
+			}
+		}
+		
+		while (packet_length != 0) {
+			// Don't read samples when buffer is full
+			while (buffer_size == BUFFER_SIZE-1) delay;
+			
+			// Get next samples from FSL
 			fsl_read ? fsl_data;
 			
-			// Receive a new packet
-			
-			if (fsl_data[31]) { // Reset bit
-				// Start buffer again from beginning
+			if (sample_width == WIDTH_8BIT) {
+				// Can read 4 samples at a time from FSL bus with 8-bit samples
 				par {
-					cursor_write = 0;
-					cursor_read = 0;
-					buffer_size = 0;
+					buffer.write[cursor_write]   = fsl_data[31:24] @ 0;
+					buffer.write[cursor_write+1] = fsl_data[23:16] @ 0;
+					buffer.write[cursor_write+2] = fsl_data[15:8] @ 0;
+					buffer.write[cursor_write+3] = fsl_data[7:0] @ 0;
+					
+					cursor_write += 4;
+					buffer_size += 4;
+					packet_length -= 4;
 				}
 			}
-			
-			// Extract packet information from FSL word
-			par {
-				sample_width  = fsl_data[30];
-				sample_rate   = fsl_data[29:28];
-				packet_offset = fsl_data[27:14];
-				packet_length = fsl_data[13:0];
-			}
-			
-			while (packet_length != 0) {
-				// Don't read samples when buffer is full
-				while (buffer_size == BUFFER_SIZE-1) delay;
-				
-				// Get next samples from FSL
-				fsl_read ? fsl_data;
-				
-				if (sample_width == WIDTH_8BIT) {
-					// Can read 4 samples at a time from FSL bus with 8-bit samples
-					par {
-						buffer.write[cursor_write]   = fsl_data[31:24] @ 0;
-						buffer.write[cursor_write+1] = fsl_data[23:16] @ 0;
-						buffer.write[cursor_write+2] = fsl_data[15:8] @ 0;
-						buffer.write[cursor_write+3] = fsl_data[7:0] @ 0;
-						
-						cursor_write += 4;
-						buffer_size += 4;
-						packet_length -= 4;
-					}
-				}
-				else {
-					// Can read 2 samples at a time from FSL bus with 16-bit samples
-					par {
-						buffer.write[cursor_write]   = fsl_data[31:21] @ ~fsl_data[20];
-						buffer.write[cursor_write+1] = fsl_data[15:5] @ ~fsl_data[4];
-						
-						cursor_write += 2;
-						buffer_size += 2;
-						packet_length -= 4;
-					}
+			else {
+				// Can read 2 samples at a time from FSL bus with 16-bit samples
+				par {
+					buffer.write[cursor_write]   = fsl_data[31:21] @ ~fsl_data[20];
+					buffer.write[cursor_write+1] = fsl_data[15:5] @ ~fsl_data[4];
+					
+					cursor_write += 2;
+					buffer_size += 2;
+					packet_length -= 4;
 				}
 			}
 		}
-		// Consume buffer data and output on DAC
-		while (1) {
-			while (buffer_size < BUFFER_SIZE-1) delay;
-			while (buffer_size > 0) {
-				par {
-					dac_write ! buffer.read[cursor_read];
-					cursor_read++;
-					buffer_size--;
-				}
+	}
+}
+
+void buffer_to_dac_driver() {
+	// Consume buffer data and output on DAC
+	while (1) {
+		while (buffer_size != BUFFER_SIZE-1) delay;
+		while (buffer_size != 0) {
+			par {
+				dac_write ! buffer.read[cursor_read];
+				cursor_read++;
+				buffer_size--;
 			}
 		}
 	}

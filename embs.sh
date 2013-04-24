@@ -3,7 +3,7 @@ set -e
 set +x
 
 cflags="-Wall -O2 -std=gnu99"
-sourcefiles="software/main.c software/ethernet.c software/hc.c software/utilities.c software/vlab.c software/interrupts.s"
+sourcefiles="software/main.c software/ethernet.c software/gui.c software/hc.c software/utilities.c software/vlab.c software/interrupts.s"
 handelcfiles="main.hcc dac.hcc fsl.hcc vlab.hcc"
 
 mhsfile=system.mhs

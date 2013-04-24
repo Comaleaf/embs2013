@@ -4,8 +4,12 @@
 #define WIDTH_8BIT  0
 #define WIDTH_16BIT 1
 
+#define RATE_8K  0
+#define RATE_11K 1
+#define RATE_22K 2
+#define RATE_44K 3
+
 unsigned 1 sample_width;
-unsigned 2 sample_rate;
 unsigned 14 packet_length;
 signed 14 packet_offset;
 
@@ -13,5 +17,8 @@ extern clk_port;
 set clock = internal CLK;
 
 void main(void);
+
+void fsl_to_buffer_driver();
+void buffer_to_dac_driver();
 
 #endif

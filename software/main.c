@@ -2,6 +2,7 @@
 #include "hc.h"
 #include "utilities.h"
 #include "ethernet.h"
+#include "gui.h"
 #include "main.h"
 
 void inth_mac() {
@@ -34,7 +35,7 @@ void inth_mac() {
 
 void inth_uart() {
 	while (uart_check_char(UART)) {
-		uart_get_char(UART);
+		accept(uart_get_char(UART));
 	}
 }
 
@@ -42,7 +43,7 @@ void inth_switches() {
 	should_reset = 1;
 	active_channel = (0x7 & get_switches()) + 1;
 	
-	set_leds(1 << (state.channel-1));
+	set_leds(1 << (active_channel-1));
 	switches_clear_interrupt();
 }
 
