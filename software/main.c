@@ -37,7 +37,7 @@ void inth_mac() {
 
 void inth_uart() {
 	while (uart_check_char(UART)) {
-		accept(uart_get_char(UART));
+		gui_accept(uart_get_char(UART));
 	}
 }
 
@@ -83,6 +83,9 @@ int main(void) {
 	
 	// Announce on network (so network switches learn device)
 	eth_tx_announce();
+	
+	// GUI prompt
+	gui_prompt();
 	
 	return 0;
 }

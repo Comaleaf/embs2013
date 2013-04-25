@@ -11,7 +11,7 @@ void dac_driver() {
             i = dac_sample_rate;
         }
 		par {
-			dac_write_to_output(0x0, sample);
+			dac_write_to_output(0xF, sample);
 			while (i) i--; // assignment takes 1 cycle
 		}
 	}
