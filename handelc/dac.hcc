@@ -8,7 +8,7 @@ void dac_driver() {
 	while (1) {
         par {
             dac_write ? sample;
-            i = sample_rate;
+            i = dac_sample_rate;
         }
 		par {
 			dac_write_to_output(0x0, sample);

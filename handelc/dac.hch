@@ -3,7 +3,7 @@
 
 chan <unsigned 12> dac_write;
 
-unsigned 13 sample_rate;
+unsigned 13 dac_sample_rate;
 
 void dac_driver();
 

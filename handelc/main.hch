@@ -9,10 +9,6 @@
 #define RATE_22K 2
 #define RATE_44K 3
 
-unsigned 1 sample_width;
-unsigned 14 packet_length;
-signed 14 packet_offset;
-
 extern clk_port;
 set clock = internal CLK;
 

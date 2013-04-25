@@ -14,22 +14,24 @@ void inth_mac() {
 			short stream = (short)((*(packet+3) & 0x0000FFFF));
 			char rate    = (char)((*(packet+4) & 0xFF000000) >> 24U);
 			char width   = (char)((*(packet+4) & 0x00FF0000) >> 16U);
-			int index    = (int) (*(packet+5));
-			int length   = (int) (*(packet+6));
+			int index    = (int)(*(packet+5));
+			int length   = (int)(*(packet+6));
 			
 			if (stream == active_channel) {
 				hc_new_packet(should_reset, width, rate, index - previous_index, length);
-				
+								
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
 				}
 				
 				previous_index = index;
+				if (should_reset) {
+					should_reset = 0;
+				}
 			}
 		}
 		
 		mac_clear_rx_packet(packet);
-		should_reset = 0;
 	}
 }
 
@@ -61,6 +63,8 @@ void int_handler() {
 }
 
 int main(void) {
+	should_reset = 1;
+	
 	initialise();
 	
 	// MAC
