@@ -5,6 +5,33 @@
 #include "gui.h"
 #include "main.h"
 
+struct {
+	char should_reset;
+	int channel_settings;
+	int previous_index;
+} state;
+
+int get_channels() {
+	return state.channel_settings;
+}
+
+void set_channels(int new_channels) {
+	mac_disable_interrupts();
+
+	state.should_reset = 1;
+	state.channel_settings = new_channels;
+	set_leds(0xFF & (new_channels>>1));
+
+	uart_send_string(UART, "\r\n [Active Channels:");
+	for (int i=1; i<=20; i++) {
+		uart_send_char(UART, ' ');
+		uart_send_char(UART, TEST_BIT(state.channel_settings, i) ? '1' : '0');
+	}
+	uart_send_char(UART, ']');
+	
+	mac_enable_interrupts();
+}
+
 void inth_mac() {
 	volatile int* packet;
 	while ((packet = mac_packet_ready())) {
@@ -17,16 +44,16 @@ void inth_mac() {
 			int index    = (int)(*(packet+5));
 			int length   = (int)(*(packet+6));
 			
-			if (stream == active_channel) {
-				hc_new_packet(should_reset, width, rate, index - previous_index, length);
+			if (TEST_BIT(state.channel_settings, stream)) {
+				hc_new_packet(state.should_reset, width, rate, index - state.previous_index, length);
 								
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
 				}
 				
-				previous_index = index;
-				if (should_reset) {
-					should_reset = 0;
+				state.previous_index = index;
+				if (state.should_reset) {
+					state.should_reset = 0;
 				}
 			}
 		}
@@ -42,10 +69,7 @@ void inth_uart() {
 }
 
 void inth_switches() {	
-	should_reset = 1;
-	active_channel = (0x7 & get_switches()) + 1;
-	
-	set_leds(1 << (active_channel-1));
+	set_channels(1<<((0x7 & get_switches()) + 1));
 	switches_clear_interrupt();
 }
 
@@ -63,7 +87,7 @@ void int_handler() {
 }
 
 int main(void) {
-	should_reset = 1;
+	state.should_reset = 1;
 	
 	initialise();
 	

@@ -1,13 +1,12 @@
 #include "vlab.h"
 #include "utilities.h"
+#include "main.h"
 #include "gui.h"
 
 #define IS_PLUS_OR_MINUS(x) (x == '+' || x == '-')
 
 char input[50];
 short cursor;
-
-int settings;
 
 void gui_prompt() {
 	uart_send_string(UART, "\r\n> ");
@@ -48,7 +47,8 @@ void gui_process() {
 	unsigned char chan_id;
 	char enable;
 	short digit_position;
-	
+	int channels = get_channels();
+		
 	cursor = 0;
 	while (input[cursor] != 0) {
 		enable = (input[cursor++] == '+');
@@ -62,16 +62,14 @@ void gui_process() {
 		}
 		
 		// Only if it's a valid channel
-		if (chan_id <= 20) {
-
-			
+		if (chan_id != 0 && chan_id <= 20) {
 			// Enable/disable the channel's bit
 			if (enable) {
-				settings |= (1<<chan_id);
+				channels |= (1<<chan_id);
 				uart_send_string(UART, "\r\n-  Enabling");
 			}
 			else {
-				settings &= ~(1<<chan_id);
+				channels &= ~(1<<chan_id);
 				uart_send_string(UART, "\r\n- Disabling");
 			}
 			
@@ -83,5 +81,6 @@ void gui_process() {
 		cursor++; // Consume space
 	}
 	
+	set_channels(channels);
 	gui_prompt();
 }

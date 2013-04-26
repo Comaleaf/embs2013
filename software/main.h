@@ -1,10 +1,9 @@
 #ifndef __MAIN_H_
 #define __MAIN_H_
 
-char should_reset;
-char active_channel;
-
-int previous_index;
+// Set channels
+int get_channels();
+void set_channels(int new_channels);
 
 // Interrupt handlers
 void int_handler();
