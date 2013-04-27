@@ -5,27 +5,29 @@
 #include "gui.h"
 #include "main.h"
 
+ChanInfo channels[20];
+
 struct {
-	char should_reset;
-	int channel_settings;
-	int previous_index;
+	char reset;
+	int channels;
+	int last_index[20];
 } state;
 
 int get_channels() {
-	return state.channel_settings;
+	return state.channels;
 }
 
 void set_channels(int new_channels) {
 	mac_disable_interrupts();
 
-	state.should_reset = 1;
-	state.channel_settings = new_channels;
+	state.reset = 1;
+	state.channels = new_channels;
 	set_leds(0xFF & (new_channels>>1));
 
-	uart_send_string(UART, "\r\n [Active Channels:");
+	uart_send_string(UART, "\r\n [Active channels:");
 	for (int i=1; i<=20; i++) {
 		uart_send_char(UART, ' ');
-		uart_send_char(UART, TEST_BIT(state.channel_settings, i) ? '1' : '0');
+		uart_send_char(UART, TEST_BIT(state.channels, i) ? '1' : '0');
 	}
 	uart_send_char(UART, ']');
 	
@@ -39,21 +41,23 @@ void inth_mac() {
 		
 		if (type == 0x55AA) {
 			short stream = (short)((*(packet+3) & 0x0000FFFF));
-			char rate    = (char)((*(packet+4) & 0xFF000000) >> 24U);
-			char width   = (char)((*(packet+4) & 0x00FF0000) >> 16U);
-			int index    = (int)(*(packet+5));
-			int length   = (int)(*(packet+6));
 			
-			if (TEST_BIT(state.channel_settings, stream)) {
-				hc_new_packet(state.should_reset, width, rate, index - state.previous_index, length);
-								
+			if (TEST_BIT(state.channels, stream)) {
+				channels[stream].rate  = (char)((*(packet+4) & 0xFF000000) >> 24U);
+				channels[stream].width = (char)((*(packet+4) & 0x00FF0000) >> 16U);
+				
+				int index  = (int)(*(packet+5));
+				int length = (int)(*(packet+6));
+				
+				hc_new_packet(state.reset, channels[stream].width, channels[stream].rate, index - state.last_index[stream-1], length);
+				
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
 				}
 				
-				state.previous_index = index;
-				if (state.should_reset) {
-					state.should_reset = 0;
+				state.last_index[stream-1] = index;
+				if (state.reset) {
+					state.reset = 0;
 				}
 			}
 		}
@@ -68,8 +72,8 @@ void inth_uart() {
 	}
 }
 
-void inth_switches() {	
-	set_channels(1<<((0x7 & get_switches()) + 1));
+void inth_switches() {
+	set_channels(1<<(get_switches() + 1));
 	switches_clear_interrupt();
 }
 
@@ -87,7 +91,7 @@ void int_handler() {
 }
 
 int main(void) {
-	state.should_reset = 1;
+	state.reset = 1;
 	
 	initialise();
 	

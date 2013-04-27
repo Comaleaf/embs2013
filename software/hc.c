@@ -1,6 +1,10 @@
 #include "vlab.h"
 #include "hc.h"
 
+void hc_set_channels(int channels) {
+	hc_put(0x80000000 | channels);
+}
+
 void hc_new_packet(char reset, char width, char rate, int offset, int length) {
 	int data;
 	

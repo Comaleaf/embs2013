@@ -18,7 +18,7 @@ void gui_prompt() {
 }
 
 void gui_accept(char c) {
-	if (c == '\r') {
+	if (c == '\r' && cursor >= 2) {
 		gui_process();
 	}
 	// Digit

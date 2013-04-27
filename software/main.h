@@ -1,6 +1,11 @@
 #ifndef __MAIN_H_
 #define __MAIN_H_
 
+typedef struct {
+	char width;
+	char rate;
+} ChanInfo;
+
 // Set channels
 int get_channels();
 void set_channels(int new_channels);
