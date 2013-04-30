@@ -10,5 +10,6 @@ char byte2hex(char i);
 char* strncpy(char* dst, char* src, int length);
 int pow_10(int n);
 void asciify(int n, int digits, char* output);
+char* int2digit(int n);
 
 #endif
