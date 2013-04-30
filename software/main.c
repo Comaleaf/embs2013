@@ -18,6 +18,8 @@ int get_channels() {
 }
 
 void set_channels(int new_channels) {
+	short num_active_channels;
+	
 	mac_disable_interrupts();
 
 	state.reset = 1;
@@ -27,9 +29,20 @@ void set_channels(int new_channels) {
 	uart_send_string(UART, "\r\n [Active channels:");
 	for (int i=1; i<=20; i++) {
 		uart_send_char(UART, ' ');
-		uart_send_char(UART, TEST_BIT(state.channels, i) ? '1' : '0');
+		if (TEST_BIT(state.channels, 1)) {
+			channels[i].offset = num_active_channels++;
+			channels[i].interval = channels[i].rate;
+			uart_send_char(UART, '1');
+		}
+		else {
+			uart_send_char(UART, '0');
+		}	
 	}
 	uart_send_char(UART, ']');
+	
+	for (int i=1; i<=20; i++) {
+		channels[i].interval *= num_active_channels;
+	}
 	
 	mac_enable_interrupts();
 }

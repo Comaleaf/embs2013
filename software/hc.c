@@ -1,22 +1,21 @@
 #include "vlab.h"
 #include "hc.h"
 
-void hc_set_channels(int channels) {
-	hc_put(0x80000000 | channels);
+void hc_set_rate(char rate) {
+	hc_put(0x80000000 | rate);
 }
 
-void hc_new_packet(char reset, char width, char rate, int offset, int length) {
+void hc_new_packet(char width, char interval, int offset, int length) {
 	int data;
 	
-	data = reset & 0x1;
-	data = (data<<1) + ((width-1) & 0x1);
-	data = (data<<2) + ((rate-1) & 0x3);
-	data = (data<<14) + (offset & 0x3FFF);
-	data = (data<<14) + (length & 0x3FFF);
-
+	data = width & 0x1;
+	data = (data<<5) + (interval & 0x1F);
+	data = (data<<15) + (offset & 0x3FF);
+	data = (data<<10) + (length & 0x3FF);
+	
 	hc_put(data);
 }
 
-void hc_put(int data) {
+inline void hc_put(int data) {
 	putfslx(data, 0, FSL_BLOCKING);
 }
