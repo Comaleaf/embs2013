@@ -8,9 +8,8 @@
 ChanInfo channels[20];
 
 struct {
-	char reset;
 	int channels;
-	int last_index[20];
+	int last_index;
 } state;
 
 int get_channels() {
@@ -19,30 +18,33 @@ int get_channels() {
 
 void set_channels(int new_channels) {
 	short num_active_channels;
+	char highest_rate;
 	
 	mac_disable_interrupts();
 
-	state.reset = 1;
 	state.channels = new_channels;
 	set_leds(0xFF & (new_channels>>1));
 
 	uart_send_string(UART, "\r\n [Active channels:");
 	for (int i=1; i<=20; i++) {
-		uart_send_char(UART, ' ');
-		if (TEST_BIT(state.channels, 1)) {
+		if (TEST_BIT(state.channels, i)) {
+			if (channels[i].rate > highest_rate) {
+				highest_rate = channels[i].rate;
+			}
 			channels[i].offset = num_active_channels++;
 			channels[i].interval = channels[i].rate;
-			uart_send_char(UART, '1');
+			uart_send_char(UART, ' ');
+			uart_send_string(UART, int2digit(i));
 		}
-		else {
-			uart_send_char(UART, '0');
-		}	
 	}
 	uart_send_char(UART, ']');
 	
 	for (int i=1; i<=20; i++) {
 		channels[i].interval *= num_active_channels;
 	}
+	
+	// Reset the stream and set the buffer rate to the fastest
+	hc_reset_stream(highest_rate);
 	
 	mac_enable_interrupts();
 }
@@ -56,22 +58,21 @@ void inth_mac() {
 			short stream = (short)((*(packet+3) & 0x0000FFFF));
 			
 			if (TEST_BIT(state.channels, stream)) {
-				channels[stream].rate  = (char)((*(packet+4) & 0xFF000000) >> 24U);
-				channels[stream].width = (char)((*(packet+4) & 0x00FF0000) >> 16U);
+				ChanInfo *channel = &channels[stream-1];
+				
+				channel->rate  = (char)((*(packet+4) & 0xFF000000) >> 24U);
+				channel->width = (char)((*(packet+4) & 0x00FF0000) >> 16U);
 				
 				int index  = (int)(*(packet+5));
 				int length = (int)(*(packet+6));
 				
-				hc_new_packet(state.reset, channels[stream].width, channels[stream].rate, index - state.last_index[stream-1], length);
+				hc_preamble(channel->width, channel->interval, (signed)state.last_index - index + channel->offset, length);
 				
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
 				}
 				
-				state.last_index[stream-1] = index;
-				if (state.reset) {
-					state.reset = 0;
-				}
+				state.last_index = index;
 			}
 		}
 		
@@ -86,7 +87,7 @@ void inth_uart() {
 }
 
 void inth_switches() {
-	set_channels(1<<(get_switches() + 1));
+	set_channels(1 << (get_switches()+1));
 	switches_clear_interrupt();
 }
 
@@ -103,9 +104,7 @@ void int_handler() {
 	intc_acknowledge_interrupt(vec);
 }
 
-int main(void) {
-	state.reset = 1;
-	
+int main(void) {	
 	initialise();
 	
 	// MAC
