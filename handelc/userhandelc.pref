@@ -13,8 +13,18 @@
   <item expanded="false" />
   <item expanded="false" />
   <item expanded="false" />
+  <item expanded="false" />
+  <item expanded="false" />
  </workspaceview>
  <windowlist>
+  <window filepath="buffer.hcc" type="SourceEdit" >
+   <size width="1043" height="482" maximised="0" />
+   <position x="499" y="0" />
+  </window>
+  <window filepath="buffer.hch" type="SourceEdit" >
+   <size width="1043" height="482" maximised="0" />
+   <position x="499" y="185" />
+  </window>
   <window filepath="dac.hcc" type="SourceEdit" >
    <size width="577" height="472" maximised="0" />
    <position x="266" y="179" />

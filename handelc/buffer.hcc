@@ -8,16 +8,15 @@ mpram {
 } buffer with {block=1};
 
 void buffer_driver() {
-	unsigned 12 write_word, read_word;
+	unsigned 12 write_word;
 	
 	par {
 		// Read
 		while (1) {
-			if (buffer_size > 0) {
-				read_word = buffer.read[buffer_cursor_read];
+			if (buffer_used > 0) {
 				par {
-					buffer_read ! read_word;
-					buffer_size--;
+					buffer_read ! buffer.read[buffer_cursor_read];
+					buffer_used--;
 					buffer_cursor_read++;
 				}
 			}
@@ -27,11 +26,11 @@ void buffer_driver() {
 		}
 		// Write
 		while (1) {
-			if (buffer_size < BUFFER_WIDTH-2) {
+			if (buffer_used < BUFFER_WIDTH-2) {
 				buffer_write ? write_word;
 				par {
 					buffer.write[buffer_cursor_write] = write_word;
-					buffer_size++;
+					buffer_used++;
 					buffer_cursor_write++;
 				}
 			}

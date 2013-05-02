@@ -21,8 +21,9 @@ void fsl_to_buffer_driver() {
 	unsigned 32 fsl_data;
 	
 	unsigned 1 sample_width;
-	unsigned 14 packet_length;
-	signed 14 packet_offset;
+	unsigned 5 packet_interval;
+	unsigned 10 packet_length;
+	signed 15 packet_offset;
 	
 	// Process data from FSL into buffer
     while (1) {
@@ -33,8 +34,8 @@ void fsl_to_buffer_driver() {
 		if (fsl_data[31]) { // Reset bit
 			// Start buffer again from beginning
 			par {
-				cursor_write = 0;
-				cursor_read = 0;
+				buffer_cursor_write = 0;
+				buffer_cursor_read = 0;
 				buffer_used = 0;
 				
 				switch (fsl_data <- 2) {
@@ -48,9 +49,19 @@ void fsl_to_buffer_driver() {
 		
 		// Extract packet information from FSL word
 		par {
-			sample_width  = fsl_data[30];
-			packet_offset = (signed) fsl_data[27:14];
-			packet_length = fsl_data[13:0];
+			sample_width    = fsl_data[30];
+			packet_interval = fsl_data[29:25];
+			packet_offset   = (signed) fsl_data[24:10];
+			packet_length   = fsl_data[9:0];
+		}
+		
+		if (packet_offset[14] == 1) {
+			// Go backwards
+			buffer_cursor_write -= ~packet_offset + 1;
+		}	
+		else {
+			// Go forwards
+			buffer_cursor_write += packet_offset;
 		}
 		
 		while (packet_length != 0) {
@@ -81,7 +92,7 @@ void buffer_to_dac_driver() {
 	
 	// Consume buffer data and output on DAC
 	while (1) {
-		while (buffer_used < BUFFER_WIDTH-5) {delay;}
+		while (buffer_used < 4096-5) {delay;}
 		while (buffer_used > 4) {
 			buffer_read ? pcm_word;
 			dac_write ! pcm_word;

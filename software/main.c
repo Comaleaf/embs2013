@@ -73,7 +73,7 @@ void inth_mac() {
 					hc_put(*(packet+7+i));
 				}
 				
-				state.last_index = index;
+				state.last_index = index + length;
 			}
 		}
 		
