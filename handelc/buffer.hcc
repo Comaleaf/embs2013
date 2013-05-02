@@ -1,0 +1,35 @@
+#include "buffer.hch"
+
+#define BUFFER_WIDTH 4096
+
+mpram {
+	wom unsigned 12 write[BUFFER_WIDTH];
+	rom unsigned 12 read[BUFFER_WIDTH];
+} buffer with {block=1};
+
+void buffer_driver() {
+	unsigned 12 write_word, read_word;
+	
+	par {
+		// Read
+		while (1) {
+			if (buffer_size > 0) {
+				read_word = buffer.read[buffer_cursor_read];
+				buffer_read ! read_word;
+			}
+			else {
+				delay;
+			}
+		}
+		// Write
+		while (1) {
+			if (buffer_size < BUFFER_WIDTH-2) {
+				buffer_write ? write_word;
+				buffer.write[buffer_cursor_write] = write_word;
+			}
+			else {
+				delay;
+			}
+		}
+	}
+}

@@ -1,0 +1,13 @@
+#ifndef __BUFFER_HCH_
+#define __BUFFER_HCH_
+
+chan <unsigned 12> buffer_read;
+chan <unsigned 12> buffer_write;
+
+unsigned 12 buffer_cursor_read;
+unsigned 12 buffer_cursor_write;
+unsigned 12 buffer_used;
+
+void buffer_driver();
+
+#endif
