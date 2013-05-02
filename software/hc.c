@@ -2,7 +2,7 @@
 #include "hc.h"
 
 void hc_reset_stream(char rate) {
-	hc_put(0x80000000 | rate);
+	hc_put(0x80000000 | (rate & 0x3));
 }
 
 void hc_preamble(char width, char interval, int offset, int length) {
