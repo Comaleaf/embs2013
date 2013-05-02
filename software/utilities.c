@@ -22,20 +22,18 @@ int pow_10(int n) {
 	return v;
 }
 
-char* int2digit(int n) {
-	char digits[3];
-	
+char* int2digit(int n, char *output) {
 	if (n > 9) {
-		digits[0] = '0' + (n / 10);
-		digits[1] = '0' + '0' + n - digits[0];
-		digits[2] = 0;
+		output[0] = '0' + (n/10);
+		output[1] = '0' + (n - (n/10)*10);
+		output[2] = 0;
 	}
 	else {
-		digits[0] = '0' + n;
-		digits[1] = 0;
+		output[0] = '0' + n;
+		output[1] = 0;
 	}
 	
-	return digits;
+	return output;
 }
 
 void asciify(int n, int digits, char* output) {

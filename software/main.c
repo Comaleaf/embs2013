@@ -17,8 +17,9 @@ int get_channels() {
 }
 
 void set_channels(int new_channels) {
-	short num_active_channels;
-	char highest_rate;
+	short num_active_channels = 0;
+	char highest_rate = 0;
+	char digits[3];
 	
 	mac_disable_interrupts();
 
@@ -34,7 +35,7 @@ void set_channels(int new_channels) {
 			channels[i].offset = num_active_channels++;
 			channels[i].interval = channels[i].rate;
 			uart_send_char(UART, ' ');
-			uart_send_string(UART, int2digit(i));
+			uart_send_string(UART, int2digit(i, digits));
 		}
 	}
 	uart_send_char(UART, ']');
