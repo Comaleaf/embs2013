@@ -6,10 +6,10 @@ void dac_driver() {
 	unsigned 13 i;
 	
 	while (1) {
-        par {
-            dac_write ? sample;
-            i = dac_sample_rate;
-        }
+		par {
+			dac_write ? sample;
+			i = dac_sample_rate;
+		}
 		par {
 			dac_write_to_output(0xF, sample);
 			while (i) i--; // assignment takes 1 cycle
