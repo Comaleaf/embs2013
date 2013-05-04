@@ -41,7 +41,7 @@ void set_channels(int new_channels) {
 	uart_send_char(UART, ']');
 	
 	for (int i=1; i<=20; i++) {
-		channels[i].interval *= num_active_channels;
+		channels[i].interval = 1 << (highest_rate - channels[i].rate);
 	}
 	
 	// Reset the stream and set the buffer rate to the fastest
