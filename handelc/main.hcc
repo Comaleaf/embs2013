@@ -1,8 +1,16 @@
 #include "vlab.hch"
 #include "fsl.hch"
 #include "dac.hch"
-#include "buffer.hch"
 #include "main.hch"
+
+#define BUFFER_WIDTH 4096
+
+mpram {
+	ram unsigned 12 write[BUFFER_WIDTH];
+	ram unsigned 12 read[BUFFER_WIDTH];
+} buffer with { block=1 };
+
+unsigned 12 read_cursor;
 
 void main(void) {	
 	initialise();
@@ -11,91 +19,138 @@ void main(void) {
 		uart_driver();
 		fsl_driver();
 		dac_driver();
-		buffer_driver();
 		fsl_to_buffer_driver();
 		buffer_to_dac_driver();
 	}
 }
 
+// May need to un-inline if it uses too much logic
+inline unsigned 12 mix(unsigned 12 x, unsigned 12 y) {
+	signal <unsigned 12> intermediate;
+	
+	if (y[11] == 1) {
+		// Positive
+		intermediate = x + (0 @ y<-11);
+		return intermediate < x ? 0xFFF : intermediate;
+	}
+	else {
+		// Negative
+		return y > x ? 0 : x - (0 @ y<-11);
+	}
+}
+
 void fsl_to_buffer_driver() {
 	unsigned 32 fsl_data;
-	
-	unsigned 1 sample_width;
-	unsigned 5 packet_interval;
-	unsigned 10 packet_length;
-	signed 15 packet_offset;
+	unsigned 12 existing;
+	unsigned 12 cursor;
+	struct preamble fsl_preamble;
 	
 	// Process data from FSL into buffer
     while (1) {
-		fsl_read ? fsl_data;
+		fsl_read ? fsl_preamble;
 		
 		// Receive a new packet
 		
-		if (fsl_data[31]) { // Reset bit
+		if (fsl_preamble.reset) { // Reset bit
 			// Start buffer again from beginning
 			par {
-				buffer_cursor_write = 0;
-				buffer_cursor_read = 0;
+				read_cursor = 0;
 				buffer_used = 0;
+				cursor = 0;
 				
-				switch (fsl_data <- 2) {
+				switch (sample_rate) {
 					case RATE_8K:  dac_sample_rate = 6249; break;
 					case RATE_11K: dac_sample_rate = 4534; break;
 					case RATE_22K: dac_sample_rate = 2266; break;
 					case RATE_44K: dac_sample_rate = 1133; break;
 				}
 			}
+			
+			// Clear buffer
+			do {
+				par {
+					buffer.write[cursor] = 0x800;
+					buffer.read[cursor+1] = 0x800;
+					cursor += 2;
+				}
+			} while (cursor != 0);
+			
+			// Skip the rest
+			continue;
 		}
 		
-		// Extract packet information from FSL word
-		par {
-			sample_width    = fsl_data[30];
-			packet_interval = fsl_data[29:25];
-			packet_offset   = (signed) fsl_data[24:10];
-			packet_length   = fsl_data[9:0];
-		}
-		
-		if (packet_offset[14] == 1) {
+		// Determine position in the buffer to write values into
+		if (fsl_preamble.offset[14] == 1) {
 			// Go backwards
-			buffer_cursor_write -= ~packet_offset + 1;
-		}	
+			cursor -= ~fsl_preamble.offset + 1;
+		}
 		else {
 			// Go forwards
-			buffer_cursor_write += packet_offset;
+			cursor += fsl_preamble.offset;
 		}
 		
-		while (packet_length != 0) {
+		while (fsl_preamble.length != 0) {
+			while (buffer_used > 4090) delay;
+			
 			// Get next samples from FSL
 			par {
 				fsl_read ? fsl_data;
-				packet_length -= 4;
+				fsl_preamble.length -= 4;
+				existing = buffer.write[cursor];
+				buffer_used += 4;
 			}
 			
-			if (sample_width == WIDTH_8BIT) {
+			if (fsl_preamble.width == WIDTH_8BIT) {
 				// Can read 4 samples at a time from FSL bus with 8-bit samples
-				buffer_write ! fsl_data[31:24] @ 0;
-				buffer_write ! fsl_data[23:16] @ 0;
-				buffer_write ! fsl_data[15:8] @ 0;
-				buffer_write ! fsl_data[7:0] @ 0;
+				par {
+					buffer.write[cursor] = mix(existing, fsl_data[31:24]);
+					cursor += fsl_preamble.interval;
+				}
+				existing = buffer.write[cursor];
+				par {
+					buffer.write[cursor] = mix(existing, fsl_data[23:16]);
+					cursor += fsl_preamble.interval;
+				}
+				existing = buffer.write[cursor];
+				par {
+					buffer.write[cursor] = mix(existing, fsl_data[15:8]);
+					cursor += fsl_preamble.interval;
+				}
+				existing = buffer.write[cursor];
+				par {
+					buffer.write[cursor] = mix(existing, fsl_data[7:0]);
+					cursor += fsl_preamble.interval;
+				}
 			}
 			else {
 				// Can read 2 samples at a time from FSL bus with 16-bit samples
-				buffer_write ! fsl_data[31:21] @ ~fsl_data[20];
-				buffer_write ! fsl_data[15:5] @ ~fsl_data[4];
+				par {
+					buffer.write[cursor] = mix(existing, fsl_data[31:21] @ ~fsl_data[20]);
+					cursor += fsl_preamble.interval;
+				}
+				existing = buffer.write[cursor];
+				par {
+					buffer.write[cursor] = mix(existing, fsl_data[15:5] @ ~fsl_data[4]);
+					cursor += fsl_preamble.interval;
+				}
 			}
 		}
 	}
 }
 
-void buffer_to_dac_driver() {
-	unsigned 12 pcm_word;
-	
+void buffer_to_dac_driver() {	
 	// Consume buffer data and output on DAC
 	while (1) {
-		while (buffer_used < 4096-5) {delay;}
-		while (buffer_used > 4) {
-			buffer_read ? pcm_word;
-			dac_write ! pcm_word;
+		while (buffer_used < 4090) {delay;}
+		while (buffer_used > 0) {
+			par {
+				dac_write ! buffer.read[read_cursor];
+				buffer_used--;
+			}
+			par {
+				buffer.read[read_cursor] = 0x800; // Clear part of buffer after read (so that it won't be mixed next time round)
+				read_cursor++;
+			}
 		}
 	}
 }
