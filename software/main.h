@@ -4,7 +4,6 @@
 typedef struct {
 	char width;
 	char rate;
-	char offset;
 	char interval;
 } ChanInfo;
 

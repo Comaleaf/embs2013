@@ -17,7 +17,6 @@ int get_channels() {
 }
 
 void set_channels(int new_channels) {
-	short num_active_channels = 0;
 	char highest_rate = 0;
 	char digits[3];
 	
@@ -32,8 +31,6 @@ void set_channels(int new_channels) {
 			if (channels[i].rate > highest_rate) {
 				highest_rate = channels[i].rate;
 			}
-			channels[i].offset = num_active_channels++;
-			channels[i].interval = channels[i].rate;
 			uart_send_char(UART, ' ');
 			uart_send_string(UART, int2digit(i, digits));
 		}
@@ -67,7 +64,7 @@ void inth_mac() {
 				int index  = (int)(*(packet+5));
 				int length = (int)(*(packet+6));
 				
-				hc_preamble(channel->width, channel->interval, (signed)state.last_index - index + channel->offset, length);
+				hc_preamble(channel->width, channel->interval, (signed)state.last_index - index, length);
 				
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
