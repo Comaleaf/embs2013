@@ -8,11 +8,11 @@
 mpram {
 	ram unsigned 12 write[BUFFER_WIDTH];
 	ram unsigned 12 read[BUFFER_WIDTH];
-} buffer with { block=1 };
+} buffer with {block = 1};
 
 unsigned 12 read_cursor;
 
-void main(void) {	
+void main(void) {
 	initialise();
 	
 	par {
