@@ -1,25 +1,27 @@
 #ifndef __MAIN_HCH_
 #define __MAIN_HCH_
 
-enum rate {
-	RATE_8K,
-	RATE_11K,
-	RATE_22K,
-	RATE_44K
-};
+// Macros for interpreting the FSL preamble
 
-enum width {
-	WIDTH_8BIT,
-	WIDTH_16BIT
-};
+#define RATE_8K  0
+#define RATE_11K 1
+#define RATE_22K 2
+#define RATE_44K 3
 
-struct preamble {
-	unsigned int reset    : 1;
-	enum width width      : 1;
-	unsigned int interval : 5;
-	signed   int offset   : 15;
-	unsigned int length   : 10;
-};
+#define WIDTH_8BIT  0
+#define WIDTH_16BIT 1
+
+// Macros for accessing sections of the FSL preamble
+
+#define IDX_RATE     1:0
+
+#define IDX_RESET    31
+#define IDX_WIDTH    30
+#define IDX_INTERVAL 29:25
+#define IDX_OFFSET   24:10
+#define IDX_LENGTH   9:0
+
+// --
 
 extern clk_port;
 set clock = internal CLK;

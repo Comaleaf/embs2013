@@ -36,8 +36,8 @@ void set_channels(int new_channels) {
 	// can be set to it.
 	for (int i=1; i<=20; i++) {
 		if (TEST_BIT(state.channels, i)) {
-			if (channels[i].rate > sampling_rate) {
-				sampling_rate = channels[i].rate;
+			if (sampling_rate < channels[i-1].rate) {
+				sampling_rate = channels[i-1].rate;
 			}
 			
 			// Whilst checking the sample rates, also display the newly active channels to the user.
@@ -50,17 +50,19 @@ void set_channels(int new_channels) {
 	for (int i=1; i<=20; i++) {
 		// The interval to insert samples for this channel into the buffer depends on what the sampling rate
 		// will be set at.
-		channels[i].interval = 1 << (sampling_rate - channels[i].rate);
+		channels[i-1].interval = 1 << (sampling_rate - channels[i-1].rate);
 	}
 	
 	// Reset the stream and set the buffer rate to the fastest.
 	hc_reset_stream(sampling_rate);
-	
+		
 	// Now packets can be safely forwarded to the handel-c component again.
 	mac_enable_interrupts();
 }
 
 void inth_mac() {
+	char digits[3];
+	
 	volatile int* packet;
 	while ((packet = mac_packet_ready())) {
 		short type = (short)((*(packet+3) & 0xFFFF0000) >> 16U);
@@ -69,19 +71,25 @@ void inth_mac() {
 		if (type == 0x55AA) {
 			short stream = (short)((*(packet+3) & 0x0000FFFF));
 			
+			// Get channel information and update database
+			ChanInfo *channel = &channels[stream-1];
+			channel->rate  = (char)((*(packet+4) & 0xFF000000) >> 24U) - 1;
+			channel->width = (char)((*(packet+4) & 0x00FF0000) >> 16U) - 1;
+			
 			// Only forward packets for activated channels.
-			if (TEST_BIT(state.channels, stream)) {
-				ChanInfo *channel = &channels[stream-1];
-				
-				channel->rate  = (char)((*(packet+4) & 0xFF000000) >> 24U);
-				channel->width = (char)((*(packet+4) & 0x00FF0000) >> 16U);
-				
+			if (TEST_BIT(state.channels, stream)) {				
 				int index  = (int)(*(packet+5));
 				int length = (int)(*(packet+6));
 				
 				// The preamble must be sent to the handel-c component first, so that it knows where to
 				// position the samples in the buffer.
 				hc_preamble(channel->width, channel->interval, (signed)state.last_index - index, length);
+				
+				// Print interval rate for debugging
+				if (channel->interval != 1) {
+				uart_send_string(UART, "\r\nInterval: ");
+				uart_send_string(UART, int2digit(channel->interval, digits));
+				}
 				
 				// Forward all packets to the handel-c component.
 				for (int i=0; i < length/4; i++) {
