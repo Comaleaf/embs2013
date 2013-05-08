@@ -35,6 +35,8 @@ void mixer_driver() {
 			buffer.write[cursor] = (new + existing);
 		}
 		
+		cursor += 0 @ interval;
+		
 		/*if (new[11] == 1) {
 			// Positive
 			new = existing + (0 @ new<-11);
