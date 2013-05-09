@@ -22,7 +22,7 @@ void main(void) {
 
 void fsl_to_buffer_driver() {
 	unsigned 32 fsl_data;
-	
+	unsigned 14 erase_cursor;
 	unsigned 1  sample_width;
 	unsigned 10 length;
 	
@@ -34,46 +34,39 @@ void fsl_to_buffer_driver() {
 		
 		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
 			// Start buffer again from beginning
-			par {
-				buffer_used     = 0;
-				buffer_is_ready = 0;
-				read_cursor     = 0;
-			}
-			
-			par {
-				mixer_cursor = 0;
-				dac_mode_8k  = fsl_data[IDX_MODE_8K];
-				dac_mode_44k = fsl_data[IDX_MODE_44K];
-			}
+			buffer_is_ready = 0;
+			mixed_cursor    = 0;
+			read_cursor     = 0;
+			buffer_used     = 0;
+			dac_mode_8k     = fsl_data[IDX_MODE_8K];
+			dac_mode_44k    = fsl_data[IDX_MODE_44K];
 			
 			// Clear buffer
 			do {
 				par {
 					// Can use both RAM ports because the buffer consumer won't read RAM whilst buffer_used = 0
-					buffer.consumer[read_cursor] = 0x0;
-					buffer.mixer[read_cursor+1] = 0x0;
-					read_cursor += 2;
+					buffer.consumer[erase_cursor] = 0x0;
+					buffer.mixer[erase_cursor+1]  = 0x0;
+					erase_cursor += 2;
 				}
-			} while (read_cursor != 0 && read_cursor != 1);
+			} while (erase_cursor != 0);
 			
 			// Skip the rest
 			continue;
 		}
 		
-		par {
-			sample_width = fsl_data[IDX_WIDTH];
-			interval = fsl_data[IDX_INTERVAL];
-			length = fsl_data[IDX_LENGTH];
-			
-			// Determine position in the buffer to write values into
-			if (fsl_data[IDX_OFFSET][13] == 1) {
-				// Go backwards
-				mixer_cursor -= ~fsl_data[IDX_OFFSET] + 1;
-			}
-			else {
-				// Go forwards
-				mixer_cursor += fsl_data[IDX_OFFSET];
-			}
+		sample_width = fsl_data[IDX_WIDTH];
+		interval     = fsl_data[IDX_INTERVAL];
+		length       = fsl_data[IDX_LENGTH];
+		
+		// Determine position in the buffer to write values into
+		if (fsl_data[IDX_OFFSET][13] == 1) {
+			// Go backwards
+			mixer_cursor -= ~fsl_data[IDX_OFFSET] + 1;
+		}
+		else {
+			// Go forwards
+			mixer_cursor += fsl_data[IDX_OFFSET];
 		}
 		
 		while (length != 0) {
@@ -89,13 +82,13 @@ void fsl_to_buffer_driver() {
 				// Can read 4 samples at a time from FSL bus with 8-bit samples
 				mixer_next ! (fsl_data[31:24] @ 0);
 				mixer_next ! (fsl_data[23:16] @ 0);
-				mixer_next ! (fsl_data[15:8] @ 0);
-				mixer_next ! (fsl_data[7:0] @ 0);
+				mixer_next ! (fsl_data[15:8]  @ 0);
+				mixer_next ! (fsl_data[7:0]   @ 0);
 			}
 			else {
 				// Can read 2 samples at a time from FSL bus with 16-bit samples
 				mixer_next ! (fsl_data[31:21] @ ~fsl_data[20]);
-				mixer_next ! (fsl_data[15:5] @ ~fsl_data[4]);
+				mixer_next ! (fsl_data[15:5]  @ ~fsl_data[4]);
 			}
 		}
 	}
