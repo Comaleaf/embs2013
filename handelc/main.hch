@@ -26,9 +26,9 @@
 // For preamble type
 #define IDX_RESET    31
 #define IDX_BUFFER   30
-#define IDX_WIDTH    29
-#define IDX_INTERVAL 28:24
-#define IDX_OFFSET   23:10
+#define IDX_WIDTH    30
+#define IDX_INTERVAL 29:25
+#define IDX_OFFSET   24:10
 #define IDX_LENGTH   9:0
 
 // --

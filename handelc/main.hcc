@@ -11,6 +11,7 @@ mpram {
 } buffer with {block = 1};
 
 unsigned 12 buffer_used;
+
 unsigned 1 buffer_ready;
 unsigned 12 read_cursor;
 unsigned 12 cursor;
@@ -28,15 +29,19 @@ void mixer_driver() {
 			existing = buffer.write[cursor];
 		}
 		
-		if ((new + existing) < existing) {
-			buffer.write[cursor] = 0xFFF;
+		par {
+			/*if ((new + existing) < existing) {
+				buffer.write[cursor] = 0xFFF;
+			}
+			else {
+				buffer.write[cursor] = (new + existing);
+			}*/
+			
+			buffer.write[cursor] = new;
+			buffer_used++;
+			cursor += 0 @ interval;
 		}
-		else {
-			buffer.write[cursor] = (new + existing);
-		}
-		
-		cursor += 0 @ interval;
-		
+			
 		/*if (new[11] == 1) {
 			// Positive
 			new = existing + (0 @ new<-11);
@@ -99,11 +104,12 @@ void fsl_to_buffer_driver() {
 			// Clear buffer
 			do {
 				par {
-					buffer.write[cursor] = 0x800;
-					buffer.read[cursor+1] = 0x800;
+					// Can use both RAM ports because the buffer consumer won't read RAM whilst buffer_used = 0
+					buffer.write[cursor] = 0x000;
+					buffer.read[cursor+1] = 0x000;
 					cursor += 2;
 				}
-			} while (cursor != 0);
+			} while (cursor != 0 && cursor != 1);
 			
 			// Skip the rest
 			continue;
@@ -132,7 +138,6 @@ void fsl_to_buffer_driver() {
 			par {
 				fsl_read ? fsl_data;
 				length -= 4;
-				buffer_used += 4;
 			}
 			
 			if (sample_width == WIDTH_8BIT) {
@@ -151,7 +156,7 @@ void fsl_to_buffer_driver() {
 	}
 }
 
-void buffer_to_dac_driver() {	
+void buffer_to_dac_driver() {
 	// Consume buffer data and output on DAC
 	while (1) {
 		if (buffer_used > 0 && buffer_ready) {

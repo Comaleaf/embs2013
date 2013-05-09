@@ -1,6 +1,14 @@
 #ifndef __MAIN_H_
 #define __MAIN_H_
 
+#define WIDTH_8BIT  0
+#define WIDTH_16BIT 1
+
+#define RATE_8K     0
+#define RATE_11K    1
+#define RATE_22K    2
+#define RATE_44K    3
+
 typedef struct {
 	char width;
 	char rate;

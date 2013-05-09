@@ -36,12 +36,12 @@ char* int2digit(int n, char *output) {
 	return output;
 }
 
-void asciify(int n, int digits, char* output) {
+char* int_to_digits(int n, int digits, char* output) {
 	char seen = 0;
 	int ord;
 	output[digits] = 0;
 	
-	for (int i = 0; i <= digits; i++) {
+	for (int i = 0; i < digits; i++) {
 		ord = pow_10(digits-i);
 		
 		if (ord <= n) {
@@ -56,4 +56,6 @@ void asciify(int n, int digits, char* output) {
 			output[i] = ' ';
 		}
 	}
+	
+	return output;
 }

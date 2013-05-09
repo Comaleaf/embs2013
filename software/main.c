@@ -19,7 +19,8 @@ inline int get_channels() {
 // Updates the state for which channels are active
 // Works out what intervals are necessary
 void set_channels(int new_channels) {
-	char sampling_rate = 0;
+	char sample_rate_8k_buffer = 0;
+	char sample_rate_44k_buffer = 0;
 	char digits[3];
 	
 	// If any packets were received whilst new channels are being set, the data sent
@@ -34,34 +35,46 @@ void set_channels(int new_channels) {
 	
 	// The highest rate that is a multiple of other rates must be found so that the sampling rate
 	// can be set to it.
-	for (int i=1; i<=20; i++) {
-		if (TEST_BIT(state.channels, i)) {
-			if (sampling_rate < channels[i-1].rate) {
-				sampling_rate = channels[i-1].rate;
+	for (int i=0; i<20; i++) {
+		if (TEST_BIT(state.channels, i+1)) {
+			// Determine which buffers are required
+			if (channels[i].rate == RATE_8K) {
+				sample_rate_8k_buffer = 1;
+			}
+			else {
+				// And what rate to set the 44k buffer
+				if (sample_rate_44k_buffer < channels[i].rate) {
+					sample_rate_44k_buffer = channels[i].rate;
+				}
 			}
 			
 			// Whilst checking the sample rates, also display the newly active channels to the user.
 			uart_send_char(UART, ' ');
-			uart_send_string(UART, int2digit(i, digits));
+			uart_send_string(UART, int2digit(i+1, digits));
 		}
 	}
 	uart_send_char(UART, ']');
 	
-	for (int i=1; i<=20; i++) {
+	for (int i=0; i<20; i++) {
 		// The interval to insert samples for this channel into the buffer depends on what the sampling rate
 		// will be set at.
-		channels[i-1].interval = 1 << (sampling_rate - channels[i-1].rate);
+		if (channels[i].rate == 0) {
+			channels[i].interval = 1; // There are no multiples of 8K so always use interval 1
+		}
+		else {
+			channels[i].interval = 1 << (sample_rate_44k_buffer - channels[i].rate);
+		}
 	}
 	
 	// Reset the stream and set the buffer rate to the fastest.
-	hc_reset_stream(sampling_rate);
+	hc_reset_stream(sample_rate_8k_buffer, sample_rate_44k_buffer);
 		
 	// Now packets can be safely forwarded to the handel-c component again.
 	mac_enable_interrupts();
 }
 
 void inth_mac() {
-	char digits[3];
+	char digits[10];
 	
 	volatile int* packet;
 	while ((packet = mac_packet_ready())) {
@@ -85,15 +98,20 @@ void inth_mac() {
 				// position the samples in the buffer.
 				hc_preamble(channel->width, channel->interval, (signed)state.last_index - index, length);
 				
-				// Print interval rate for debugging
-				if (channel->interval != 1) {
-				uart_send_string(UART, "\r\nInterval: ");
-				uart_send_string(UART, int2digit(channel->interval, digits));
-				}
+				/*
+				uart_send_string(UART, "\r\nIndex\tLength\r\n");
+				uart_send_string(UART, int_to_digits(index, 8, digits));
+				uart_send_char(UART, '\t');
+				uart_send_string(UART, int_to_digits(length, 8, digits));*/
 				
 				// Forward all packets to the handel-c component.
 				for (int i=0; i < length/4; i++) {
 					hc_put(*(packet+7+i));
+				}
+				
+				// Now determine the length in ~samples~, not bytes.
+				if (channel->width == WIDTH_16BIT) {
+					length >>= 1; // Divide by two
 				}
 				
 				// The position in the buffer where this packet ended must be stored so that the

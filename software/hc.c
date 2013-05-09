@@ -1,8 +1,8 @@
 #include "vlab.h"
 #include "hc.h"
 
-void hc_reset_stream(char rate) {
-	hc_put(0x80000000 | (rate & 0x3));
+void hc_reset_stream(char buffer_8k_rate, char buffer_44k_rate) {
+	hc_put(0x80000000 | (buffer_44k_rate & 0x3));
 }
 
 void hc_preamble(char width, char interval, short offset, unsigned short length) {
