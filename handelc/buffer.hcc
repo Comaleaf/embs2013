@@ -1,0 +1,6 @@
+#include "buffer.hch"
+
+mpram {
+	ram unsigned 12 mixer[BUFFER_WIDTH];
+	ram unsigned 12 consumer[BUFFER_WIDTH];
+} buffer with { block=1 };

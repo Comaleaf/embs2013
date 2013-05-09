@@ -1,0 +1,11 @@
+#ifndef __MIXER_HCH_
+#define __MIXER_HCH_
+
+extern chan <unsigned 12> mixer_next;
+
+unsigned 5  interval;
+unsigned 14 mixer_cursor;
+
+void mixer_driver();
+
+#endif

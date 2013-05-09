@@ -36,39 +36,20 @@ void intc_acknowledge_interrupt(int num);
 void intc_acknowledge_all();
 void intc_master_enable();
 
-//GFX
-void gfx_set_frame_base_address(int addr);
-void gfx_set_palette(unsigned char index, unsigned char r, unsigned char g, unsigned char b);
-
 //UART
 void uart_send_char(volatile int *uart, char c);
 void uart_send_string(volatile int *uart, char *string);
 char uart_get_char (volatile int *uart);
 int uart_check_char(volatile int *uart);
-char uart_wait_char(volatile int *uart);
-void uart_print_hex_8(volatile int *uart, char c);
-void uart_print_hex_16(volatile int *uart, short c);
-void uart_print_hex_32(volatile int *uart, int c);
 void uart_enable_interrupts(volatile int *uart);
 void uart_disable_interrupts(volatile int *uart);
-
-//Timer
-void load_timer(volatile int *timer, int load_value);
-void initialise_timer(volatile int *timer);
-void start_timer(volatile int *timer);
-void stop_timer(volatile int *timer);
-int timer_value(volatile int *timer);
 
 //Basic
 void set_leds(char c);
 char get_switches();
-char get_buttons();
 void switches_enable_interrupts();
 void switches_disable_interrupts();
-void buttons_enable_interrupts();
-void buttons_disable_interrupts();
 void switches_clear_interrupt();
-void buttons_clear_interrupt();
 
 //Ethernet
 volatile int* mac_packet_ready(void);

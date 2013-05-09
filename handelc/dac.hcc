@@ -1,18 +1,85 @@
 #include "vlab.hch"
 #include "dac.hch"
 
+#define DIVIDE_8K  6249
+#define DIVIDE_11K 4532
+#define DIVIDE_22K 2266
+#define DIVIDE_44K 1133
+
+chan <unsigned 12> dac_write_8k;
+chan <unsigned 12> dac_write_44k;
+
 void dac_driver() {
-	unsigned 12 sample;
-	unsigned 13 i;
+	unsigned 12 sample_8k;
+	unsigned 12 sample_44k;
 	
-	while (1) {
-		par {
-			dac_write ? sample;
-			i = dac_sample_rate;
+	unsigned 13 counter_8k;
+	unsigned 13 counter_44k;
+	
+	unsigned 13 divide_44k;
+	
+	unsigned 1 tx_8k;
+	unsigned 1 tx_44k;
+	
+	par {
+		// Set divide rate for 44k
+		while (1) {
+			switch (dac_mode_44k) {
+				case 1: divide_44k = DIVIDE_11K; break;
+				case 2: divide_44k = DIVIDE_22K; break;
+				case 3: divide_44k = DIVIDE_44K; break;
+				default: delay;
+			}
 		}
-		par {
-			dac_write_to_output(0xF, sample);
-			while (i) i--; // assignment takes 1 cycle
+		// 8K clock
+		while (1) {
+			if (counter_8k == DIVIDE_8K) {
+				par {
+					tx_8k = 1;
+					counter_8k = 0;
+				}
+			}
+			else {
+				counter_8k++;
+			}
+		}
+		// 44K/22K/11K clock
+		while (1) {	
+			if (counter_44k == divide_44k) {
+				par {
+					tx_44k = 1;
+					counter_44k = 0;
+				}
+			}
+			else {
+				counter_44k++;
+			}
+		}
+		// 8K output
+		while (1) {
+			if (dac_mode_8k && tx_8k) {
+				par {
+					tx_8k = 0;
+					dac_write_to_output(0xF, sample_8k);
+					dac_write_8k ? sample_8k; // Prepare next sample.
+				}
+			}
+			else {
+				delay;
+			}
+		}
+		// 11K/22K/44K output
+		while (1) {
+			if (dac_mode_44k > 0 && tx_44k) {
+				par {
+					tx_44k = 0;
+					dac_write_to_output(0xF, sample_44k);
+					dac_write_44k ? sample_44k; // Prepare next sample.
+				}
+			}
+			else {
+				delay;
+			}
 		}
 	}
 }

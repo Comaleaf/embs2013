@@ -8,6 +8,10 @@
 char input[50];
 short cursor;
 
+void gui_usage() {
+	uart_send_string(UART, "\r\nUsage: to enable channel n, type +n. To disable, type -n. Multiple commands\r\nmay be included on one line, separated by space. Starting the line\r\nwith ! will disable all other channels.\r\nExamples: \"+4 -5\" enables ch.4 and disables ch.5; \"!+2\" enables ch.2 and\r\ndisables all other channels."); 
+}
+
 void gui_prompt() {
 	uart_send_string(UART, "\r\n> ");
 	
@@ -20,6 +24,10 @@ void gui_prompt() {
 void gui_accept(char c) {
 	if (c == '\r' && cursor >= 2) {
 		gui_process();
+	}
+	else if (c == '\b' && cursor > 0) { // Backslash
+		uart_send_string(UART, "\b \b"); // Backspace, clear, backspace
+		input[cursor--] = 0;
 	}
 	// !
 	else if (c == '!' && cursor == 0) {
@@ -51,7 +59,6 @@ void gui_accept(char c) {
 void gui_process() {
 	unsigned char chan_id;
 	char enable;
-	short digit_position;
 	int channels;
 	
 	// If the first character is a !, treat the input as if no channels were enabled.
@@ -67,9 +74,7 @@ void gui_process() {
 	while (input[cursor] != 0) {
 		enable = (input[cursor++] == '+');
 		chan_id = (input[cursor++] - '0');
-		
-		digit_position = cursor-1;
-		
+			
 		// Is there a second digit?
 		if (IS_DIGIT(input[cursor])) {
 			chan_id = (chan_id*10) + (input[cursor++] - '0');
@@ -80,16 +85,10 @@ void gui_process() {
 			// Enable/disable the channel's bit
 			if (enable) {
 				channels |= (1<<chan_id);
-				uart_send_string(UART, "\r\n-  Enabling");
 			}
 			else {
 				channels &= ~(1<<chan_id);
-				uart_send_string(UART, "\r\n- Disabling");
 			}
-			
-			uart_send_string(UART, " channel ");
-			uart_send_char(UART, input[digit_position++]);
-			uart_send_char(UART, input[digit_position]);
 		}
 		
 		cursor++; // Consume space

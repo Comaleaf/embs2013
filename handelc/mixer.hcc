@@ -1,0 +1,45 @@
+#include "buffer.hch"
+#include "mixer.hch"
+
+chan <unsigned 12> mixer_next with { fifolength=4 };
+
+void mixer_driver() {
+	unsigned 12 existing;
+	unsigned 12 new;
+	
+	while (1) {
+		par {
+			mixer_next ? new;
+			existing = buffer.mixer[mixer_cursor];
+		}
+		
+		par {
+			/*if ((new + existing) < existing) {
+				buffer.write[cursor] = 0xFFF;
+			}
+			else {
+				buffer.write[cursor] = (new + existing);
+			}*/
+			
+			buffer.mixer[mixer_cursor] = new;
+			buffer_used++;
+			mixer_cursor += 0 @ interval;
+		}
+			
+		/*if (new[11] == 1) {
+			// Positive
+			new = existing + (0 @ new<-11);
+			par {
+				buffer.write[cursor] = new < existing ? 0xFFF : new;
+				cursor += 0 @ interval;
+			}
+		}
+		else {
+			// Negative
+			par {
+				buffer.write[cursor] = new > existing ? 0 : existing - new;
+				cursor += 0 @ interval;
+			}
+		}*/
+	}
+}

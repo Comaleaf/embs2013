@@ -1,0 +1,14 @@
+#ifndef __BUFFER_HCH_
+#define __BUFFER_HCH_
+
+#define BUFFER_WIDTH 16384
+
+extern mpram {
+	ram unsigned 12 mixer[BUFFER_WIDTH];
+	ram unsigned 12 consumer[BUFFER_WIDTH];
+} buffer;
+
+unsigned 12 buffer_used;
+unsigned 1  buffer_is_ready;
+
+#endif

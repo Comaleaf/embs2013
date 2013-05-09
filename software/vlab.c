@@ -36,46 +36,6 @@ int uart_check_char(volatile int *uart) {
 	return (*(uart + 2) & 0x01);
 }
 
-char uart_wait_char(volatile int *uart) {
-	while (!(*(uart + 2) & 0x01));
-	return (char)*uart;
-}
-
-char byte2hexchar(int i) {
-	if (i < 10) return i + 48;
-	else return (i-10) + 65;
-}
-
-void word2asciihex(int i, char* buf) {
-	buf[0] = byte2hexchar((i & 0xF0000000) >> 28);
-	buf[1] = byte2hexchar((i & 0x0F000000) >> 24);
-	buf[2] = byte2hexchar((i & 0x00F00000) >> 20);
-	buf[3] = byte2hexchar((i & 0x000F0000) >> 16);
-	buf[4] = byte2hexchar((i & 0x0000F000) >> 12);
-	buf[5] = byte2hexchar((i & 0x00000F00) >> 8);
-	buf[6] = byte2hexchar((i & 0x000000F0) >> 4);
-	buf[7] = byte2hexchar((i & 0x0000000F));
-	buf[8] = '\0';
-}
-
-void uart_print_hex_8(volatile int *uart, char c) {
-	uart_send_char(uart, byte2hexchar((c & 0xF0) >> 4));
-	uart_send_char(uart, byte2hexchar((c & 0x0F)));
-}
-
-void uart_print_hex_16(volatile int *uart, short c) {
-	uart_send_char(uart, byte2hexchar((c & 0xF000) >> 12));
-	uart_send_char(uart, byte2hexchar((c & 0x0F00) >> 8));
-	uart_send_char(uart, byte2hexchar((c & 0x00F0) >> 4));
-	uart_send_char(uart, byte2hexchar((c & 0x000F)));
-}
-
-void uart_print_hex_32(volatile int *uart, int i) {
-	char temp[9];
-	word2asciihex(i, temp);
-	uart_send_string(uart, temp);
-}
-
 void uart_enable_interrupts(volatile int *uart) {
 	*(uart + 3) = 0x10;
 }
@@ -90,10 +50,6 @@ void uart_disable_interrupts(volatile int *uart) {
 //------------------------------------------------------------
 void set_leds(char c) {
 	*(LEDS) = c;
-}
-
-char get_buttons() {
-	return *(BUTTONS);
 }
 
 char get_switches() {
@@ -112,20 +68,6 @@ void switches_disable_interrupts() {
 
 void switches_clear_interrupt() {
 	*(SWITCHES+72) = 0x80000001;
-}
-
-void buttons_enable_interrupts() {
-	*(BUTTONS+71) = 0x80000001;
-	*(BUTTONS+74) = 0x00000001;
-}
-
-void buttons_disable_interrupts() {
-	*(BUTTONS+71) = 0x00000000;
-	*(BUTTONS+74) = 0x00000000;
-}
-
-void buttons_clear_interrupt() {
-	*(BUTTONS+72) = 0x80000001;
 }
 
 
@@ -173,43 +115,6 @@ void intc_master_enable() {
 int intc_get_vector() {
 	return (*(INTC + 6));
 }
-
-//Graphics
-//------------------------------------------------------------
-
-void gfx_set_frame_base_address(int addr) {
-	*(VGA) = addr;
-};
-
-void gfx_set_palette(unsigned char index, unsigned char r, unsigned char g, unsigned char b) {
-	*((VGA + 1)) = (index << 16) | ((b & 0x1F) << 10) | ((g & 0x1F) << 5) | (r & 0x1F);
-}
-
-//Timer
-//-------------------------------------------------------------
-void load_timer(volatile int *timer, int load_value) {
-	(*(timer + 1)) = load_value;
-	(*timer) = (*timer) | 0x0020;
-	(*timer) = (*timer) & 0xFFDF;
-}
-
-void initialise_timer(volatile int *timer) {
-	(*timer) = 0x0000;
-	load_timer(timer, 0);
-}
-
-void start_timer(volatile int *timer) {
-	(*timer) = (*timer) | 0x0080;
-}
-
-void stop_timer(volatile int *timer) {
-	(*timer) = (*timer) & 0xFF7F;
-}
-
-int timer_value(volatile int *timer) {
-	return (*(timer+2));
-}
-
 
 //Ethernet
 //------------------------------------------------------------

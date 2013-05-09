@@ -6,30 +6,32 @@
 #define TYPE_RESET    0
 #define TYPE_PREAMBLE 1
 
-#define RATE_8K  0
-#define RATE_11K 1
-#define RATE_22K 2
-#define RATE_44K 3
+#define BUFFER_8K     0
+#define BUFFER_44K    1
 
-#define WIDTH_8BIT  0
-#define WIDTH_16BIT 1
+#define RATE_8K       0
+#define RATE_11K      1
+#define RATE_22K      2
+#define RATE_44K      3
+
+#define WIDTH_8BIT    0
+#define WIDTH_16BIT   1
 
 // Macros for accessing sections of the FSL preamble
 
 // For all types
-#define IDX_TYPE     31
+#define IDX_TYPE      31
 
 // For reset type
-#define IDX_RATE     1:0
-#define IDX_BUFFER   30
+#define IDX_MODE_8K   2
+#define IDX_MODE_44K  1:0
 
 // For preamble type
-#define IDX_RESET    31
-#define IDX_BUFFER   30
-#define IDX_WIDTH    30
-#define IDX_INTERVAL 29:25
-#define IDX_OFFSET   24:10
-#define IDX_LENGTH   9:0
+#define IDX_BUFFER    30
+#define IDX_WIDTH     29
+#define IDX_INTERVAL  28:24
+#define IDX_OFFSET    23:10
+#define IDX_LENGTH    9:0
 
 // --
 

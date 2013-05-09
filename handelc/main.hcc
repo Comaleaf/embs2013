@@ -1,64 +1,11 @@
 #include "vlab.hch"
 #include "fsl.hch"
 #include "dac.hch"
+#include "buffer.hch"
+#include "mixer.hch"
 #include "main.hch"
 
-#define BUFFER_WIDTH 4096
-
-mpram {
-	ram unsigned 12 write[BUFFER_WIDTH];
-	ram unsigned 12 read[BUFFER_WIDTH];
-} buffer with {block = 1};
-
-unsigned 12 buffer_used;
-
-unsigned 1 buffer_ready;
-unsigned 12 read_cursor;
-unsigned 12 cursor;
-unsigned 5 interval;
-
-chan <unsigned 12> mixer_next with { fifolength=4 };
-
-void mixer_driver() {
-	unsigned 12 existing;
-	unsigned 12 new;
-	
-	while (1) {
-		par {
-			mixer_next ? new;
-			existing = buffer.write[cursor];
-		}
-		
-		par {
-			/*if ((new + existing) < existing) {
-				buffer.write[cursor] = 0xFFF;
-			}
-			else {
-				buffer.write[cursor] = (new + existing);
-			}*/
-			
-			buffer.write[cursor] = new;
-			buffer_used++;
-			cursor += 0 @ interval;
-		}
-			
-		/*if (new[11] == 1) {
-			// Positive
-			new = existing + (0 @ new<-11);
-			par {
-				buffer.write[cursor] = new < existing ? 0xFFF : new;
-				cursor += 0 @ interval;
-			}
-		}
-		else {
-			// Negative
-			par {
-				buffer.write[cursor] = new > existing ? 0 : existing - new;
-				cursor += 0 @ interval;
-			}
-		}*/
-	}
-}
+unsigned 14 read_cursor;
 
 void main(void) {
 	initialise();
@@ -76,7 +23,7 @@ void main(void) {
 void fsl_to_buffer_driver() {
 	unsigned 32 fsl_data;
 	
-	unsigned 1 sample_width;
+	unsigned 1  sample_width;
 	unsigned 10 length;
 	
 	// Process data from FSL into buffer
@@ -85,31 +32,29 @@ void fsl_to_buffer_driver() {
 		
 		// Receive a new packet
 		
-		if (fsl_data[IDX_RESET]) { // Reset bit
+		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
 			// Start buffer again from beginning
 			par {
-				read_cursor = 0;
-				buffer_used = 0;
-				buffer_ready = 0;
-				cursor = 0;
-				
-				switch (fsl_data[IDX_RATE]) {
-					case RATE_8K:  dac_sample_rate = 6249; break;
-					case RATE_11K: dac_sample_rate = 4534; break;
-					case RATE_22K: dac_sample_rate = 2266; break;
-					case RATE_44K: dac_sample_rate = 1133; break;
-				}
+				buffer_used     = 0;
+				buffer_is_ready = 0;
+				read_cursor     = 0;
+			}
+			
+			par {
+				mixer_cursor = 0;
+				dac_mode_8k  = fsl_data[IDX_MODE_8K];
+				dac_mode_44k = fsl_data[IDX_MODE_44K];
 			}
 			
 			// Clear buffer
 			do {
 				par {
 					// Can use both RAM ports because the buffer consumer won't read RAM whilst buffer_used = 0
-					buffer.write[cursor] = 0x000;
-					buffer.read[cursor+1] = 0x000;
-					cursor += 2;
+					buffer.consumer[read_cursor] = 0x0;
+					buffer.mixer[read_cursor+1] = 0x0;
+					read_cursor += 2;
 				}
-			} while (cursor != 0 && cursor != 1);
+			} while (read_cursor != 0 && read_cursor != 1);
 			
 			// Skip the rest
 			continue;
@@ -121,18 +66,18 @@ void fsl_to_buffer_driver() {
 			length = fsl_data[IDX_LENGTH];
 			
 			// Determine position in the buffer to write values into
-			if (fsl_data[IDX_OFFSET][14] == 1) {
+			if (fsl_data[IDX_OFFSET][13] == 1) {
 				// Go backwards
-				cursor -= (~fsl_data[IDX_OFFSET] + 1) <- 12;
+				mixer_cursor -= ~fsl_data[IDX_OFFSET] + 1;
 			}
 			else {
 				// Go forwards
-				cursor += (fsl_data[IDX_OFFSET]) <- 12;
+				mixer_cursor += fsl_data[IDX_OFFSET];
 			}
 		}
 		
 		while (length != 0) {
-			while (buffer_used > 4090) buffer_ready = 1;
+			while (buffer_used > 4090) buffer_is_ready = 1;
 			
 			// Get next samples from FSL
 			par {
@@ -159,13 +104,13 @@ void fsl_to_buffer_driver() {
 void buffer_to_dac_driver() {
 	// Consume buffer data and output on DAC
 	while (1) {
-		if (buffer_used > 0 && buffer_ready) {
+		if (buffer_used > 0 && buffer_is_ready) {
 			par {
-				dac_write ! buffer.read[read_cursor];
+				dac_write_44k ! buffer.consumer[read_cursor];
 				buffer_used--;
 			}
 			par {
-				buffer.read[read_cursor] = 0x0; // Clear part of buffer after read (so that it won't be mixed next time round)
+				buffer.consumer[read_cursor] = 0x0; // Clear part of buffer after read (so that it won't be mixed next time round)
 				read_cursor++;
 			}
 		}

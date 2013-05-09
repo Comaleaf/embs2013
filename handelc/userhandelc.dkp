@@ -20,4 +20,8 @@
  <document type="hch" name="fsl.hch" />
  <document type="hcc" name="dac.hcc" />
  <document type="hch" name="dac.hch" />
+ <document type="hcc" name="mixer.hcc" />
+ <document type="hch" name="mixer.hch" />
+ <document type="hch" name="buffer.hch" />
+ <document type="hcc" name="buffer.hcc" />
 </celdev_project>

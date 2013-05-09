@@ -67,7 +67,7 @@ begin
 
   lmb_bram : lmb_bram_elaborate
     generic map (
-      C_MEMSIZE => 16#4000#,
+      C_MEMSIZE => 16#2000#,
       C_PORT_DWIDTH => 32,
       C_PORT_AWIDTH => 32,
       C_NUM_WE => 4,

@@ -4,7 +4,7 @@
 #include "hc.h"
 #include "ethernet.h"
 
-void eth_setup() {
+inline void eth_setup() {
 	// Set MAC address
 	MAC_TX1[0] = 0x00112233;
 	MAC_TX1[1] = 0x00160000;
@@ -12,7 +12,7 @@ void eth_setup() {
 	mac_set_mac_address();
 }
 
-void eth_tx_announce() {
+inline void eth_tx_announce() {
 	MAC_TX1[0] = 0xFFFFFFFF; // Destination MAC
 	MAC_TX1[1] = 0xFFFF0011; // Destination MAC, Source MAC
 	MAC_TX1[2] = 0x22330016; // Source MAC

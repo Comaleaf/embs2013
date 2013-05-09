@@ -73,9 +73,7 @@ void set_channels(int new_channels) {
 	mac_enable_interrupts();
 }
 
-void inth_mac() {
-	char digits[10];
-	
+void inth_mac() {	
 	volatile int* packet;
 	while ((packet = mac_packet_ready())) {
 		short type = (short)((*(packet+3) & 0xFFFF0000) >> 16U);
@@ -96,13 +94,7 @@ void inth_mac() {
 				
 				// The preamble must be sent to the handel-c component first, so that it knows where to
 				// position the samples in the buffer.
-				hc_preamble(channel->width, channel->interval, (signed)state.last_index - index, length);
-				
-				/*
-				uart_send_string(UART, "\r\nIndex\tLength\r\n");
-				uart_send_string(UART, int_to_digits(index, 8, digits));
-				uart_send_char(UART, '\t');
-				uart_send_string(UART, int_to_digits(length, 8, digits));*/
+				hc_preamble((channel->rate > 0), channel->width, channel->interval, (signed)state.last_index - index, length);
 				
 				// Forward all packets to the handel-c component.
 				for (int i=0; i < length/4; i++) {
@@ -134,6 +126,7 @@ void inth_uart() {
 void inth_switches() {
 	// Set the active channel to be the switch just activated.
 	set_channels(1 << (get_switches()+1));
+	gui_prompt();
 	
 	switches_clear_interrupt();
 }
@@ -151,7 +144,7 @@ void int_handler() {
 	intc_acknowledge_interrupt(vec);
 }
 
-int main(void) {	
+int main(void) {
 	initialise();
 	
 	// MAC
@@ -172,6 +165,7 @@ int main(void) {
 	eth_tx_announce();
 	
 	// GUI prompt
+	gui_usage();
 	gui_prompt();
 	
 	return 0;
