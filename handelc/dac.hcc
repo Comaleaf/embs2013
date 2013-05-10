@@ -1,10 +1,10 @@
 #include "vlab.hch"
 #include "dac.hch"
 
-#define DIVIDE_8K  6249
-#define DIVIDE_11K 4532
-#define DIVIDE_22K 2266
-#define DIVIDE_44K 1133
+#define DIVIDE_8K  6250
+#define DIVIDE_11K 4532 // 4535.14739229   These have to be rounded to be multiples
+#define DIVIDE_22K 2266 // 2267.573696145  of eachother, so that the audio is in
+#define DIVIDE_44K 1133 // 1133.786848073  sync when they are mixed.
 
 chan <unsigned 12> dac_write_8k;
 chan <unsigned 12> dac_write_44k;

@@ -11,10 +11,10 @@ void mixer_driver() {
 	while (1) {
 		par {
 			mixer_next ? new;
-			mixed = (0 @ buffer.mixer[mixer_cursor]) - 0x800;
+			mixed = (signed)(0 @ buffer.mixer[mixer_cursor]) - 0x800;
 		}
 		
-		mixed += (0 @ new) - 0x800;
+		mixed += (signed)(0 @ new) - 0x800;
 		
 		par {
 			if (mixed > 0x800) {
