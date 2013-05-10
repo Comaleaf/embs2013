@@ -16,50 +16,29 @@ void dac_driver() {
 	unsigned 13 counter_8k;
 	unsigned 13 counter_44k;
 	
-	unsigned 13 divide_44k;
-	
-	unsigned 1 tx_8k;
-	unsigned 1 tx_44k;
-	
 	par {
-		// Set divide rate for 44k
-		while (1) {
-			switch (dac_mode_44k) {
-				case 1: divide_44k = DIVIDE_11K; break;
-				case 2: divide_44k = DIVIDE_22K; break;
-				case 3: divide_44k = DIVIDE_44K; break;
-				default: delay;
-			}
-		}
 		// 8K clock
 		while (1) {
-			if (counter_8k == DIVIDE_8K) {
-				par {
-					tx_8k = 1;
-					counter_8k = 0;
-				}
+			if (counter_8k == 0) {
+				counter_8k = DIVIDE_8K;
 			}
 			else {
-				counter_8k++;
+				counter_8k--;
 			}
 		}
 		// 44K/22K/11K clock
 		while (1) {	
-			if (counter_44k == divide_44k) {
-				par {
-					tx_44k = 1;
-					counter_44k = 0;
-				}
+			if (counter_44k == 0) {
+				counter_44k = DIVIDE_11K >> (0 @ (dac_mode_44k - 1));
 			}
 			else {
-				counter_44k++;
+				counter_44k--;
 			}
 		}
 		// 8K output
 		while (1) {
-			if (dac_mode_8k && tx_8k) {
+			if (dac_mode_8k && counter_8k == 0) {
 				par {
-					tx_8k = 0;
 					dac_write_to_output(0xF, sample_8k);
 					dac_write_8k ? sample_8k; // Prepare next sample.
 				}
@@ -70,9 +49,8 @@ void dac_driver() {
 		}
 		// 11K/22K/44K output
 		while (1) {
-			if (dac_mode_44k > 0 && tx_44k) {
+			if (dac_mode_44k > 0 && counter_44k == 0) {
 				par {
-					tx_44k = 0;
 					dac_write_to_output(0xF, sample_44k);
 					dac_write_44k ? sample_44k; // Prepare next sample.
 				}

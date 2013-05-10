@@ -8,7 +8,7 @@ extern mpram {
 	ram unsigned 12 consumer [];
 } buffer;
 
-unsigned 12 buffer_used;
+unsigned 14 buffer_used;
 unsigned 1  buffer_is_ready;
 
 #endif

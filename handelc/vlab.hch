@@ -34,11 +34,6 @@ void initialise(void);
 void dac_write_to_output(unsigned 4 addr, unsigned 12 data);
 void dac_power_down_output(unsigned 4 addr);
 
-//Utility functions
-void uart_print_hex_32(unsigned 32 data);
-void uart_print_hex_16(unsigned 16 data);
-void uart_print_hex_8(unsigned 8 data);
-
 //Audio functions
 void dac_power_down_output(unsigned 4 addr);
 void dac_write_to_output(unsigned 4 addr, unsigned 12 data);

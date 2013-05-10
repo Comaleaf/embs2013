@@ -148,37 +148,6 @@ void uart_driver() {
 }
 
 
-
-//Utility functions
-//------------------------
-
-unsigned 8 decode_hex_digit(unsigned 4 d) {
-	if(d > 9) return 'A' + ((unsigned 8)(0 @ d) - 10);
-	else return '0' + (unsigned 8)(0 @ d);
-}
-
-void uart_print_hex_8(unsigned 8 data) {
-	unsigned 8 c;
-	c = decode_hex_digit(data[7:4]);
-	uartwrite ! c;
-	c = decode_hex_digit(data[3:0]);
-	uartwrite ! c;
-}
-
-void uart_print_hex_16(unsigned 16 data) {
-	uart_print_hex_8(data[15:8]);
-	uart_print_hex_8(data[7:0]);
-}	
-
-
-void uart_print_hex_32(unsigned 32 data) {
-	uart_print_hex_16(data[31:16]);
-	uart_print_hex_16(data[15:0]);	
-}
-
-
-
-
 //Audio signals and interface
 //--------------------------------------------------------------------------------------
 

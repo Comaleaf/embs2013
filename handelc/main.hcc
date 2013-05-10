@@ -11,7 +11,6 @@ void main(void) {
 	initialise();
 	
 	par {
-		uart_driver();
 		fsl_driver();
 		dac_driver();
 		mixer_driver();
@@ -35,12 +34,12 @@ void fsl_to_buffer_driver() {
 		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
 			// Start buffer again from beginning
 			buffer_is_ready = 0;
-			mixed_cursor    = 0;
+			mixer_cursor    = 0;
 			read_cursor     = 0;
 			buffer_used     = 0;
 			dac_mode_8k     = fsl_data[IDX_MODE_8K];
 			dac_mode_44k    = fsl_data[IDX_MODE_44K];
-			
+
 			// Clear buffer
 			do {
 				par {
@@ -54,11 +53,11 @@ void fsl_to_buffer_driver() {
 			// Skip the rest
 			continue;
 		}
-		
+
 		sample_width = fsl_data[IDX_WIDTH];
 		interval     = fsl_data[IDX_INTERVAL];
 		length       = fsl_data[IDX_LENGTH];
-		
+
 		// Determine position in the buffer to write values into
 		if (fsl_data[IDX_OFFSET][13] == 1) {
 			// Go backwards
@@ -70,7 +69,7 @@ void fsl_to_buffer_driver() {
 		}
 		
 		while (length != 0) {
-			while (buffer_used > 4090) buffer_is_ready = 1;
+			while (buffer_used > BUFFER_WIDTH-4) buffer_is_ready = 1;
 			
 			// Get next samples from FSL
 			par {
