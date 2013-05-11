@@ -6,13 +6,7 @@
 #define DIVIDE_22K 2266 // 2267.573696145  of eachother, so that the audio is in
 #define DIVIDE_44K 1133 // 1133.786848073  sync when they are mixed.
 
-chan <unsigned 12> dac_write_8k;
-chan <unsigned 12> dac_write_44k;
-
 void dac_driver() {
-	unsigned 12 sample_8k;
-	unsigned 12 sample_44k;
-	
 	unsigned 13 counter_8k;
 	unsigned 13 counter_44k;
 	
@@ -37,10 +31,10 @@ void dac_driver() {
 		}
 		// 8K output
 		while (1) {
-			if (dac_mode_8k && counter_8k == 0) {
+			if (dac_mode_8k && dac_8k.write && counter_8k == 0) {
 				par {
-					dac_write_to_output(0xF, sample_8k);
-					dac_write_8k ? sample_8k; // Prepare next sample.
+					dac_write_to_output(0xF, dac_8k.buffer);
+					dac_8k.write = 0;
 				}
 			}
 			else {
@@ -49,10 +43,10 @@ void dac_driver() {
 		}
 		// 11K/22K/44K output
 		while (1) {
-			if (dac_mode_44k != 0 && counter_44k == 0) {
+			if (dac_mode_44k != 0 && dak_44k.write && counter_44k == 0) {
 				par {
-					dac_write_to_output(0xF, sample_44k);
-					dac_write_44k ? sample_44k; // Prepare next sample.
+					dac_write_to_output(0xF, dac_44.buffer);
+					dac_44k.write = 0;
 				}
 			}
 			else {

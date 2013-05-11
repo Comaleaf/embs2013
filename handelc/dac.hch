@@ -1,11 +1,17 @@
 #ifndef __DAC_HCH_
 #define __DAC_HCH_
 
-extern chan <unsigned 12> dac_write_8k;
-extern chan <unsigned 12> dac_write_44k;
+struct {
+	unsigned 1  mode;
+	unsigned 1  write;
+	unsigned 12 buffer;
+} dac_8k;
 
-unsigned 1 dac_mode_8k;
-unsigned 2 dac_mode_44k;
+struct {
+	unsigned 2  mode;
+	unsigned 1  write;
+	unsigned 12 buffer;
+} dac_44k;
 
 void dac_driver();
 

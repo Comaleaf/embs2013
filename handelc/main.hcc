@@ -6,10 +6,11 @@
 #include "main.hch"
 
 unsigned 14 read_cursor;
+unsigned 1  pause_playback = 1;
 
 void main(void) {
 	initialise();
-	
+		
 	par {
 		fsl_driver();
 		dac_driver();
@@ -33,12 +34,12 @@ void fsl_to_buffer_driver() {
 		
 		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
 			// Start buffer again from beginning
-			buffer_is_ready = 0;
-			mixer_cursor    = 0;
-			buffer_used     = 0;
-			read_cursor     = 0;
-			dac_mode_8k     = fsl_data[IDX_MODE_8K];
-			dac_mode_44k    = fsl_data[IDX_MODE_44K];
+			pause_playback = 1;
+			dac_mode_8k    = fsl_data[IDX_MODE_8K];
+			dac_mode_44k   = fsl_data[IDX_MODE_44K];
+			mixer_cursor   = 0;
+			buffer_used    = 0; // These two are zeroed last to give the buffer consumer enough cycles to avoid conflicts
+			read_cursor    = 0;
 
 			// Clear buffer
 			do {
@@ -69,7 +70,7 @@ void fsl_to_buffer_driver() {
 		}
 		
 		while (length != 0) {
-			while (buffer_used[13:2] == 0xFFF) buffer_is_ready = 1; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
+			while (buffer_used[13:2] == 0xFFF) pause_playback = 0; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
 			
 			// Get next samples from FSL
 			par {
@@ -96,15 +97,14 @@ void fsl_to_buffer_driver() {
 void buffer_to_dac_driver() {
 	// Consume buffer data and output on DAC
 	while (1) {
-		if (buffer_used != 0 && buffer_is_ready) {
+		if (buffer_used != 0 && ~pause_playback && ~dac_44k.write) {
 			par {
-				dac_write_44k ! buffer.consumer[read_cursor];
-				buffer_used--;
+				dac_44k.buffer = buffer.consumer[read_cursor];
+				dac_44k.write = 1;
 			}
-			par {
-				buffer.consumer[read_cursor] = 0x0; // Clear part of buffer after read (so that it won't be mixed next time round)
-				read_cursor++;
-			}
+			buffer.consumer[read_cursor] = 0x0; // Clear part of buffer after read (so that it won't be mixed next time round)
+			buffer_used--;
+			read_cursor++;
 		}
 		else {
 			delay;
