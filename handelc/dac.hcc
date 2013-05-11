@@ -49,7 +49,7 @@ void dac_driver() {
 		}
 		// 11K/22K/44K output
 		while (1) {
-			if (dac_mode_44k > 0 && counter_44k == 0) {
+			if (dac_mode_44k != 0 && counter_44k == 0) {
 				par {
 					dac_write_to_output(0xF, sample_44k);
 					dac_write_44k ? sample_44k; // Prepare next sample.

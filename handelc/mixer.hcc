@@ -4,7 +4,7 @@
 chan <unsigned 12> mixer_next with { fifolength=4 };
 
 void mixer_driver() {
-	signed   13 mixed;
+	signed   14 mixed;
 	unsigned 12 new;
 	//signal   existing;
 	
@@ -14,17 +14,17 @@ void mixer_driver() {
 			//mixed = (signed)(0 @ buffer.mixer[mixer_cursor]) - 0x800;
 		}
 		
-		//mixed += (signed)(0 @ new) - 0x800;
+		//mixed += (signed)(0 @ new);
 		
 		par {/*
-			if (mixed > 0x800) {
-				buffer.mixer[mixer_cursor] = 0xFFF;
-			}
-			else if (mixed < -0x800) {
+			if (mixed[13]) { // < 0x000 (negative)
 				buffer.mixer[mixer_cursor] = 0x0;
 			}
+			else if (mixed[12]) { // > 0xFFF
+				buffer.mixer[mixer_cursor] = 0xFFF;
+			}
 			else {
-				buffer.mixer[mixer_cursor] = (unsigned)(mixed + 0x800) <- 12;
+				buffer.mixer[mixer_cursor] = (unsigned)mixed <- 12;
 			}*/
 			buffer.mixer[mixer_cursor] = new;
 			
