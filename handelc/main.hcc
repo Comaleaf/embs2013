@@ -35,8 +35,8 @@ void fsl_to_buffer_driver() {
 		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
 			// Start buffer again from beginning
 			pause_playback = 1;
-			dac_mode_8k    = fsl_data[IDX_MODE_8K];
-			dac_mode_44k   = fsl_data[IDX_MODE_44K];
+			dac_8k.mode    = fsl_data[IDX_MODE_8K];
+			dac_44k.mode   = fsl_data[IDX_MODE_44K];
 			mixer_cursor   = 0;
 			buffer_used    = 0; // These two are zeroed last to give the buffer consumer enough cycles to avoid conflicts
 			read_cursor    = 0;

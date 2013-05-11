@@ -23,7 +23,7 @@ void dac_driver() {
 		// 44K/22K/11K clock
 		while (1) {	
 			if (counter_44k == 0) {
-				counter_44k = DIVIDE_11K >> (0 @ (dac_mode_44k - 1));
+				counter_44k = DIVIDE_11K >> (0 @ (dac_44k.mode - 1));
 			}
 			else {
 				counter_44k--;
@@ -31,7 +31,7 @@ void dac_driver() {
 		}
 		// 8K output
 		while (1) {
-			if (dac_mode_8k && dac_8k.write && counter_8k == 0) {
+			if (dac_8k.mode && dac_8k.write && counter_8k == 0) {
 				par {
 					dac_write_to_output(0xF, dac_8k.buffer);
 					dac_8k.write = 0;
@@ -43,9 +43,9 @@ void dac_driver() {
 		}
 		// 11K/22K/44K output
 		while (1) {
-			if (dac_mode_44k != 0 && dak_44k.write && counter_44k == 0) {
+			if (dac_44k.mode != 0 && dac_44k.write && counter_44k == 0) {
 				par {
-					dac_write_to_output(0xF, dac_44.buffer);
+					dac_write_to_output(0xF, dac_44k.buffer);
 					dac_44k.write = 0;
 				}
 			}
