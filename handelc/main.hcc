@@ -5,8 +5,7 @@
 #include "mixer.hch"
 #include "main.hch"
 
-unsigned 14 read_cursor;
-unsigned 1  pause_playback = 1;
+unsigned 1 pause_playback = 1;
 
 void main(void) {
 	initialise();
@@ -17,6 +16,7 @@ void main(void) {
 		mixer_driver();
 		fsl_to_buffer_driver();
 		buffer_to_dac_driver();
+		buffer_used_driver();
 	}
 }
 
@@ -45,8 +45,8 @@ void fsl_to_buffer_driver() {
 			do {
 				par {
 					// Can use both RAM ports because the buffer consumer won't read RAM whilst buffer_used = 0
-					buffer.consumer[erase_cursor] = 0x0;
-					buffer.mixer[erase_cursor+1]  = 0x0;
+					buffer.consumer[erase_cursor] = 0x800;
+					buffer.mixer[erase_cursor+1]  = 0x800;
 					erase_cursor += 2;
 				}
 			} while (erase_cursor[13:1] != 0); // Least significant bit should be ignored because cursor increments by two
@@ -58,19 +58,27 @@ void fsl_to_buffer_driver() {
 		sample_width = fsl_data[IDX_WIDTH];
 		interval     = fsl_data[IDX_INTERVAL];
 		length       = fsl_data[IDX_LENGTH];
+		
+		if (fsl_data[IDX_BUFFER]) {
+			mixer_buffer = &buffer_8k;
+		}
+		else {
+			mixer_buffer = &buffer_44k;
+		}
 
 		// Determine position in the buffer to write values into
 		if (fsl_data[IDX_OFFSET][13] == 1) {
 			// Go backwards
-			mixer_cursor -= ~fsl_data[IDX_OFFSET] + 1;
+			mixer_buffer->write_addr -= ~fsl_data[IDX_OFFSET] + 1;
+			USED_DEC(mixer_buffer, length); // if we have to go back, remove this from the used count
 		}
 		else {
 			// Go forwards
-			mixer_cursor += fsl_data[IDX_OFFSET];
+			mixer_buffer->write_addr += fsl_data[IDX_OFFSET];
 		}
 		
 		while (length != 0) {
-			while (buffer_used[13:2] == 0xFFF) pause_playback = 0; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
+			while (mixer_buffer->used[12:2] == 0x7FF) pause_playback = 0; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
 			
 			// Get next samples from FSL
 			par {
@@ -97,16 +105,33 @@ void fsl_to_buffer_driver() {
 void buffer_to_dac_driver() {
 	// Consume buffer data and output on DAC
 	while (1) {
-		if (buffer_used != 0 && ~pause_playback && ~dac_44k.write) {
-			par {
-				dac_44k.buffer = buffer.consumer[read_cursor];
-				dac_44k.write = 1;
+		try {
+			try {
+				if (~dac_8k.write) {
+					par {
+						dac_8k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_8k)];
+						dac_8k.write = 1;
+					}
+					buffer.consumer[0 @ buffer_8k.read] = 0x800; // Clear part of buffer after read (so that it won't be mixed next time round)
+					buffer_used_dec ! &buffer_8k.used;
+					buffer_8k.read++;
+				}
+
+				if (~dac_44k.write) {
+					par {
+						dac_44k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_44k)];
+						dac_44k.write = 1;
+					}
+					buffer.consumer[1 @ buffer_44k.read] = 0x800;
+					USED_DEC(buffer_44k, 1);
+					buffer_44k.read++;
+				}
 			}
-			buffer.consumer[read_cursor] = 0x0; // Clear part of buffer after read (so that it won't be mixed next time round)
-			buffer_used--;
-			read_cursor++;
+			reset (buffer_8k.used == 0 || buffer_44.used == 0) {
+				pause_playback = 1;
+			}
 		}
-		else {
+		reset (pause_playback) {
 			delay;
 		}
 	}

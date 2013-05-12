@@ -3,8 +3,9 @@
 
 extern chan <unsigned 12> mixer_next;
 
-unsigned 5  interval;
-unsigned 14 mixer_cursor;
+unsigned 5 interval;
+
+BufferInfo *mixer_buffer;
 
 void mixer_driver();
 

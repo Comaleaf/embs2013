@@ -23,7 +23,7 @@ void dac_driver() {
 		// 44K/22K/11K clock
 		while (1) {	
 			if (counter_44k == 0) {
-				counter_44k = DIVIDE_11K >> (0 @ (dac_44k.mode - 1));
+				counter_44k = DIVIDE_44K << (0 @ (3 - dac_44k.mode));
 			}
 			else {
 				counter_44k--;

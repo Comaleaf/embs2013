@@ -3,11 +3,26 @@
 
 #define BUFFER_WIDTH 16384
 
+#define MIXER_ADDR(buffer)    ((buffer).buffer_page @ (buffer).write_addr)
+#define CONSUMER_ADDR(buffer) ((buffer).buffer_page @ (buffer).read_addr)
+
+#define USED_DEC(buffer, n) do {while(trysema((buffer).used_sema) == 0) delay; (buffer).used -= n; releasesema((buffer).used_sema);} while(0)
+#define USED_INC(buffer, n) do {while(trysema((buffer).used_sema) == 0) delay; (buffer).used += n; releasesema((buffer).used_sema);} while(0)
+
 extern mpram {
 	ram unsigned 12 mixer    [];
 	ram unsigned 12 consumer [];
 } buffer;
 
-unsigned 14 buffer_used;
+typedef struct {
+	unsigned 13 read_addr;
+	unsigned 13 write_addr;
+	unsigned 13 used;
+	unsigned 1  buffer_page;
+	sema        used_sema;
+} BufferInfo;
+
+BufferInfo buffer_8k  = {0, 0, 0, 0};
+BufferInfo buffer_44k = {0, 0, 0, 1};
 
 #endif

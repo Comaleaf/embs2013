@@ -1,35 +1,35 @@
 #include "buffer.hch"
 #include "mixer.hch"
 
-chan <unsigned 12> mixer_next with { fifolength=4 };
+chan <unsigned 12> mixer_next with { fifolength=1 };
 
 void mixer_driver() {
 	signed   14 mixed;
 	unsigned 12 new;
-	//signal   existing;
 	
 	while (1) {
 		par {
 			mixer_next ? new;
-			//mixed = (signed)(0 @ buffer.mixer[mixer_cursor]) - 0x800;
+			mixed = (signed)(0 @ buffer.mixer[MIXER_ADDR(*mixer_buffer)) - 0x800;
 		}
 		
-		//mixed += (signed)(0 @ new);
+		par {
+			mixed += (signed)(0 @ new);
+			USED_INC(mixed_buffer, 1);
+		}
 		
-		par {/*
+		par {
 			if (mixed[13]) { // < 0x000 (negative)
-				buffer.mixer[mixer_cursor] = 0x0;
+				buffer.mixer[MIXER_ADDR(*mixer_buffer)] = 0x0;
 			}
 			else if (mixed[12]) { // > 0xFFF
-				buffer.mixer[mixer_cursor] = 0xFFF;
+				buffer.mixer[MIXER_ADDR(*mixer_buffer)] = 0xFFF;
 			}
 			else {
-				buffer.mixer[mixer_cursor] = (unsigned)mixed <- 12;
-			}*/
-			buffer.mixer[mixer_cursor] = new;
+				buffer.mixer[MIXER_ADDR(*mixer_buffer)] = (unsigned)mixed <- 12;
+			}
 			
-			buffer_used++;
-			mixer_cursor += 0 @ interval;
+			mixer_buffer->write_addr += 0 @ interval;
 		}
 	}
 }
