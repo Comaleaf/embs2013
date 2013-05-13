@@ -15,7 +15,7 @@ void mixer_driver() {
 		
 		par {
 			mixed += (signed)(0 @ new);
-			USED_INC(*mixer_buffer, 1);
+			mixer_buffer->used++;
 		}
 		
 		par {

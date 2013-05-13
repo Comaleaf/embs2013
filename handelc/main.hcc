@@ -11,6 +11,7 @@ void main(void) {
 	initialise();
 		
 	par {
+		uart_driver();
 		fsl_driver();
 		dac_driver();
 		mixer_driver();
@@ -32,6 +33,7 @@ void fsl_to_buffer_driver() {
 		// Receive a new packet
 		
 		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
+			
 			// Start buffer again from beginning
 			pause_playback = 1;
             
@@ -74,7 +76,6 @@ void fsl_to_buffer_driver() {
 		if (fsl_data[IDX_OFFSET][13] == 1) {
 			// Go backwards
 			mixer_buffer->write_addr -= (~fsl_data[IDX_OFFSET] + 1) <- 13;
-			USED_DEC(*mixer_buffer, 0 @ length); // if we have to go back, remove this from the used count
 		}
 		else {
 			// Go forwards
@@ -82,7 +83,7 @@ void fsl_to_buffer_driver() {
 		}
 		
 		while (length != 0) {
-			while (mixer_buffer->used[12:2] == 0x7FF) pause_playback = 0; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
+			if (mixer_buffer->used[12:2] == 0x7FF) pause_playback = 0; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
 			
 			// Get next samples from FSL
 			par {
@@ -110,33 +111,26 @@ void buffer_to_dac_driver() {
 	// Consume buffer data and output on DAC
 	while (1) {
 		try {
-			try {
-				if (~dac_8k.write) {
-					par {
-						dac_8k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_8k)];
-						dac_8k.write = 1;
-					}
-					buffer.consumer[0 @ buffer_8k.read_addr] = 0x800; // Clear part of buffer after read (so that it won't be mixed next time round)
-					USED_DEC(buffer_8k, 1);
-					buffer_8k.read_addr++;
+			if (~dac_8k.write) {
+				par {
+					dac_8k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_8k)];
+					dac_8k.write = 1;
 				}
-                else
-                {
-                    delay;
-                }
-
-				if (~dac_44k.write) {
-					par {
-						dac_44k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_44k)];
-						dac_44k.write = 1;
-					}
-					buffer.consumer[1 @ buffer_44k.read_addr] = 0x800;
-					USED_DEC(buffer_44k, 1);
-					buffer_44k.read_addr++;
-				}
+				buffer.consumer[CONSUMER_ADDR(buffer_8k)] = 0x800; // Clear part of buffer after read (so that it won't be mixed next time round)
+				buffer_8k.read_addr++;
 			}
-			reset (buffer_8k.used == 0 || buffer_44k.used == 0) {
-				pause_playback = 1;
+			else
+			{
+				delay;
+			}
+
+			if (~dac_44k.write) {
+				par {
+					dac_44k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_44k)];
+					dac_44k.write = 1;
+				}
+				buffer.consumer[CONSUMER_ADDR(buffer_44k)] = 0x800;
+				buffer_44k.read_addr++;
 			}
 		}
 		reset (pause_playback) {
