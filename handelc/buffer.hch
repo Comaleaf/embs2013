@@ -22,7 +22,7 @@ typedef struct {
 	sema        used_sema;
 } BufferInfo;
 
-BufferInfo buffer_8k  = {0, 0, 0, 0};
-BufferInfo buffer_44k = {0, 0, 0, 1};
+extern BufferInfo buffer_8k;
+extern BufferInfo buffer_44k;
 
 #endif

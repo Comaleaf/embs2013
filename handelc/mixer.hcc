@@ -10,12 +10,12 @@ void mixer_driver() {
 	while (1) {
 		par {
 			mixer_next ? new;
-			mixed = (signed)(0 @ buffer.mixer[MIXER_ADDR(*mixer_buffer)) - 0x800;
+			mixed = (signed)(0 @ buffer.mixer[MIXER_ADDR(*mixer_buffer)]) - 0x800;
 		}
 		
 		par {
 			mixed += (signed)(0 @ new);
-			USED_INC(mixed_buffer, 1);
+			USED_INC(*mixer_buffer, 1);
 		}
 		
 		par {

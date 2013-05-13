@@ -4,3 +4,6 @@ mpram {
 	ram unsigned 12 mixer    [BUFFER_WIDTH];
 	ram unsigned 12 consumer [BUFFER_WIDTH];
 } buffer with { block=1 };
+
+BufferInfo buffer_8k  = {0, 0, 0, 0};
+BufferInfo buffer_44k = {0, 0, 0, 1};
