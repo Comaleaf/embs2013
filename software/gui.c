@@ -1,4 +1,4 @@
-#include "vlab.h"
+#include "minivlab.h"
 #include "utilities.h"
 #include "main.h"
 #include "gui.h"

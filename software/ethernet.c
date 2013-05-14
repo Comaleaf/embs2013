@@ -1,7 +1,4 @@
-#include "vlab.h"
-#include "utilities.h"
-#include "main.h"
-#include "hc.h"
+#include "minivlab.h"
 #include "ethernet.h"
 
 inline void eth_setup() {

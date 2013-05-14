@@ -1,5 +1,3 @@
-#include "vlab.h"
-#include "utilities.h"
 #include "hc.h"
 
 inline void hc_sync() {
@@ -16,22 +14,6 @@ void hc_reset_stream(unsigned char buffer_8k_rate, unsigned char buffer_44k_rate
 void hc_preamble(unsigned char buffer, unsigned char width, unsigned char interval, unsigned short position, unsigned short length) {
 	unsigned int data;
 	
-	/*if (offset < 0) {
-		uart_send_char(UART, '-');
-	}
-	else {
-		uart_send_char(UART, '+');
-	}*/
-	
-	/*
-	char digits[3];
-	uart_send_string(UART, "\r\n");
-	uart_send_string(UART, int2digit(buffer, digits));
-	uart_send_char(UART, ' ');
-	uart_send_string(UART, int2digit(width, digits));
-	uart_send_char(UART, ' ');
-	uart_send_string(UART, int2digit(interval, digits));*/
-
 	data = 0;                               // Reset flag
 	data = data + (buffer & 0x1);           // Buffer flag
 	data = (data<<1) + (width & 0x1);       // Width flag

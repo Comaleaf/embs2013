@@ -1,4 +1,4 @@
-#include "vlab.h"
+#include "minivlab.h"
 #include "hc.h"
 #include "utilities.h"
 #include "ethernet.h"
