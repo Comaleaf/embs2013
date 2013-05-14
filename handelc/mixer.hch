@@ -1,12 +1,13 @@
 #ifndef __MIXER_HCH_
 #define __MIXER_HCH_
 
+#include "buffer.hch"
+
 extern chan <unsigned 12> mixer_next;
-
-unsigned 3 interval;
-
-BufferInfo *mixer_buffer;
+extern unsigned 3 interval;
+extern BufferInfo *mixer_buffer;
 
 void mixer_driver();
+inline unsigned 12 mix(unsigned 12 x, unsigned 12 y);
 
 #endif

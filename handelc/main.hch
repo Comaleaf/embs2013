@@ -3,8 +3,8 @@
 
 // Macros for interpreting the FSL preamble
 
-#define TYPE_RESET    0
-#define TYPE_PREAMBLE 1
+#define TYPE_PREAMBLE 0
+#define TYPE_RESET    1
 
 #define BUFFER_8K     0
 #define BUFFER_44K    1
@@ -30,8 +30,8 @@
 #define IDX_BUFFER    30
 #define IDX_WIDTH     29
 #define IDX_INTERVAL  28:26
-#define IDX_OFFSET    25:10
-#define IDX_LENGTH    9:0
+#define IDX_POSITION  25:13
+#define IDX_LENGTH    12:0
 
 // --
 

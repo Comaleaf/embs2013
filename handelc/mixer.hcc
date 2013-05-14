@@ -1,35 +1,50 @@
 #include "buffer.hch"
+#include "vlab.hch"
 #include "mixer.hch"
 
-chan <unsigned 12> mixer_next with { fifolength=1 };
+chan <unsigned 12> mixer_next;
+unsigned 3 interval;
+BufferInfo *mixer_buffer;
+
+inline unsigned 12 mix(unsigned 12 x, unsigned 12 y) {
+    unsigned 13 mixed;
+    
+    mixed = (0 @ x) + (0 @ y);
+    return mixed[12:1];
+    /*
+    if (mixed[12] == 1) {
+        return 0xFFF;
+    }
+    else {
+        return mixed <- 12;
+    }*/
+}
 
 void mixer_driver() {
-	signed   14 mixed;
 	unsigned 12 new;
-	
+    unsigned 3 length;
+    
 	while (1) {
-		par {
-			mixer_next ? new;
-			mixed = (signed)(0 @ buffer.mixer[MIXER_ADDR(*mixer_buffer)]) - 0x800;
-		}
-		
-		par {
-			mixed += (signed)(0 @ new);
-			mixer_buffer->used++;
-		}
-		
-		par {
-			if (mixed[13]) { // < 0x000 (negative)
-				buffer.mixer[MIXER_ADDR(*mixer_buffer)] = 0x0;
-			}
-			else if (mixed[12]) { // > 0xFFF
-				buffer.mixer[MIXER_ADDR(*mixer_buffer)] = 0xFFF;
-			}
-			else {
-				buffer.mixer[MIXER_ADDR(*mixer_buffer)] = (unsigned)mixed <- 12;
-			}
-			
-			mixer_buffer->write_addr += 0 @ interval;
-		}
+        par {
+            mixer_next ? new;
+            length = interval;
+            mixer_buffer->used++;
+        }
+        
+        /*
+        while (length != 0) {
+            new = mix(new, buffer.mixer[MIXER_ADDR(*mixer_buffer)]);
+            buffer.mixer[MIXER_ADDR(*mixer_buffer)] = new;
+            par {
+                mixer_buffer->write_addr++;
+                length--;
+            }
+        }*/
+       
+        new = mix(new, buffer.mixer[MIXER_ADDR(*mixer_buffer)]);
+        par {
+            buffer.mixer[MIXER_ADDR(*mixer_buffer)] = new;
+            mixer_buffer->write_addr += 0 @ interval;
+        }
 	}
 }

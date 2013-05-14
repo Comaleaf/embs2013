@@ -1,13 +1,13 @@
 #ifndef __DAC_HCH_
 #define __DAC_HCH_
 
-struct {
+extern struct {
 	unsigned 1  mode;
 	unsigned 1  write;
 	unsigned 12 buffer;
 } dac_8k;
 
-struct {
+extern struct {
 	unsigned 2  mode;
 	unsigned 1  write;
 	unsigned 12 buffer;

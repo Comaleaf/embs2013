@@ -6,10 +6,11 @@
 #include "main.h"
 
 ChanInfo channels[20];
-
+char sample_rate_8k_buffer;
+char sample_rate_44k_buffer;
+	
 struct {
 	int channels;
-	int last_index;
 } state;
 
 inline int get_channels() {
@@ -19,9 +20,10 @@ inline int get_channels() {
 // Updates the state for which channels are active
 // Works out what intervals are necessary
 void set_channels(int new_channels) {
-	char sample_rate_8k_buffer = 0;
-	char sample_rate_44k_buffer = 0;
 	char digits[3];
+
+	sample_rate_8k_buffer = 0;
+	sample_rate_44k_buffer = 0;
 	
 	// If any packets were received whilst new channels are being set, the data sent
 	// to the handel-c component would be sent without a preamble, so mac interrupts
@@ -94,7 +96,12 @@ void inth_mac() {
 				
 				// The preamble must be sent to the handel-c component first, so that it knows where to
 				// position the samples in the buffer.
-				hc_preamble((channel->rate > 0), channel->width, channel->interval, (signed)state.last_index - index, length);
+				if (channel->rate > 0) {
+					hc_preamble(1, channel->width, channel->interval, index << (sample_rate_44k_buffer - channel->rate), length);
+				}
+				else {
+					hc_preamble(0, channel->width, 1, index, length);
+				}
 				
 				// Forward all packets to the handel-c component.
 				for (int i=0; i < length/4; i++) {
@@ -105,10 +112,6 @@ void inth_mac() {
 				if (channel->width == WIDTH_16BIT) {
 					length >>= 1; // Divide by two
 				}
-				
-				// The position in the buffer where this packet ended must be stored so that the
-				// following packet can be inserted in the correct relative position.
-				state.last_index = index + (length * channel->interval);
 			}
 		}
 		
@@ -124,8 +127,13 @@ void inth_uart() {
 }
 
 void inth_switches() {
+	if (TEST_BIT(get_switches(), 3)) {
+		set_channels(1 << (get_switches()-3));
+	}
+	else {
+		set_channels(1 << (get_switches()+1));
+	}
 	// Set the active channel to be the switch just activated.
-	set_channels(1 << (get_switches()+1));
 	gui_prompt();
 	
 	switches_clear_interrupt();

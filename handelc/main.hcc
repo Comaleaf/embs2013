@@ -5,54 +5,77 @@
 #include "mixer.hch"
 #include "main.hch"
 
+// When this signal is high, buffer_to_dac_driver will not read from the buffer.
+// This is used whilst waiting for the buffer to reach a certain fullness and
+// to prevent RAM conflicts whilst clearing the buffer.
 unsigned 1 pause_playback = 1;
 
 void main(void) {
 	initialise();
-		
+    
 	par {
-		uart_driver();
+        uart_driver();
 		fsl_driver();
 		dac_driver();
 		mixer_driver();
-		fsl_to_buffer_driver();
-		buffer_to_dac_driver();
+        fsl_to_buffer_driver();
+        buffer_to_dac_driver();
 	}
 }
 
 void fsl_to_buffer_driver() {
+    // The data word from the FSL bus.
 	unsigned 32 fsl_data;
+    // RAM cursor for erasing the buffer.
 	unsigned 14 erase_cursor;
+    // The width of all samples in the current packet.
 	unsigned 1  sample_width;
-	unsigned 10 length;
+    // The length of the current packet
+	unsigned 13 length;
 	
 	// Process data from FSL into buffer
     while (1) {
+        // Sync
 		fsl_read ? fsl_data;
+        if (fsl_data != 0xFFFFFFFF) {
+            continue;
+        }
+        
+        fsl_read ? fsl_data;
+        if (fsl_data != 0x00000000) {
+            continue;
+        }
+        
+        fsl_read ? fsl_data;
+        if (fsl_data != 0xFFFFFFFF) {
+            continue;
+        }
 		
 		// Receive a new packet
-		
+		fsl_read ? fsl_data;
+        
 		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
-			
-			// Start buffer again from beginning
+			// Pause playback to prevent RAM conflicts whilst erasing.
 			pause_playback = 1;
             
-			dac_8k.mode    = fsl_data[IDX_MODE_8K];
-			dac_44k.mode   = fsl_data[IDX_MODE_44K];
+            // Set the mode of the DAC drivers as specified by the packet.
+			dac_8k.mode  = fsl_data[IDX_MODE_8K];
+			dac_44k.mode = fsl_data[IDX_MODE_44K];
             
-			buffer_8k.read_addr   = 0;
+            // Reset all buffer information.
 			buffer_8k.write_addr  = 0;
 			buffer_8k.used        = 0;
-			buffer_44k.read_addr  = 0;
+            buffer_8k.read_addr   = 0;
 			buffer_44k.write_addr = 0;
 			buffer_44k.used       = 0;
+			buffer_44k.read_addr  = 0;
 
-			// Clear buffer
+			// Clear the buffer.
 			do {
 				par {
-					// Can use both RAM ports because the buffer consumer won't read RAM whilst buffer_used = 0
-					buffer.consumer[erase_cursor] = 0x800;
-					buffer.mixer[erase_cursor+1]  = 0x800;
+					// Use both ports to halve the time needed.
+					buffer.consumer[erase_cursor] = 0x000;
+					buffer.mixer[erase_cursor+1]  = 0x000;
 					erase_cursor += 2;
 				}
 			} while (erase_cursor[13:1] != 0); // Least significant bit should be ignored because cursor increments by two
@@ -61,42 +84,41 @@ void fsl_to_buffer_driver() {
 			continue;
 		}
 
+        // Extract the packet information from the packet.
 		sample_width = fsl_data[IDX_WIDTH];
 		interval     = fsl_data[IDX_INTERVAL];
 		length       = fsl_data[IDX_LENGTH];
 		
-		if (fsl_data[IDX_BUFFER]) {
+        // Select which page of the buffer to write to.
+		if (fsl_data[IDX_BUFFER] == BUFFER_8K) {
 			mixer_buffer = &buffer_8k;
 		}
 		else {
 			mixer_buffer = &buffer_44k;
 		}
 
-		// Determine position in the buffer to write values into
-		if (fsl_data[IDX_OFFSET][15] == 1) {
-			// Go backwards
-			mixer_buffer->write_addr -= (~fsl_data[IDX_OFFSET] + 1) <- 13;
-		}
-		else {
-			// Go forwards
-			mixer_buffer->write_addr += fsl_data[IDX_OFFSET] <- 13;
-		}
+		// Determine where in the buffer this packet is situated.
+        mixer_buffer->write_addr = fsl_data[IDX_POSITION];
 		
-		while (length != 0) {
-			if (mixer_buffer->used[12:2] == 0x7FF) pause_playback = 0; // buffer_used > BUFFER_WIDTH-4 (ignore 2 least significant bits)
-			
-			// Get next samples from FSL
+        // Write all samples in packet into the buffer.
+		while (length != 0) {			
+			// Get next sample from FSL.
 			par {
 				fsl_read ? fsl_data;
-				length -= 4;
+				if (length[9:2] == 0) {
+                    length = 0; // Prevent underflows
+                }
+                else {
+                    length -= 4;
+                }
 			}
 			
 			if (sample_width == WIDTH_8BIT) {
 				// Can read 4 samples at a time from FSL bus with 8-bit samples
-				mixer_next ! (fsl_data[31:24] @ 0);
-				mixer_next ! (fsl_data[23:16] @ 0);
-				mixer_next ! (fsl_data[15:8]  @ 0);
-				mixer_next ! (fsl_data[7:0]   @ 0);
+				mixer_next ! 0 @ (unsigned 11)(fsl_data[31:24] @ 0);
+				mixer_next ! 0 @ (unsigned 11)(fsl_data[23:16] @ 0);
+				mixer_next ! 0 @ (unsigned 11)(fsl_data[15:8]  @ 0);
+				mixer_next ! 0 @ (unsigned 11)(fsl_data[7:0]   @ 0);
 			}
 			else {
 				// Can read 2 samples at a time from FSL bus with 16-bit samples
@@ -104,37 +126,40 @@ void fsl_to_buffer_driver() {
 				mixer_next ! (fsl_data[15:5]  @ ~fsl_data[4]);
 			}
 		}
+        
+        // Make sure playback isn't paused if the buffer is above a certain size.
+		if (mixer_buffer->used[12:9] == 0xF) {
+            pause_playback = 0;
+        }
+        else {
+            delay;
+        }
 	}
 }
 
-void buffer_to_dac_driver() {
+void buffer_to_dac_driver() {    
 	// Consume buffer data and output on DAC
 	while (1) {
-		try {
-			if (~dac_8k.write) {
-				par {
-					dac_8k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_8k)];
-					dac_8k.write = 1;
-				}
-				buffer.consumer[CONSUMER_ADDR(buffer_8k)] = 0x800; // Clear part of buffer after read (so that it won't be mixed next time round)
-				buffer_8k.read_addr++;
+		if (~pause_playback && ~dac_8k.write) {
+			par {
+				dac_8k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_8k)];
+				dac_8k.write = 1;
 			}
-			else
-			{
-				delay;
-			}
-
-			if (~dac_44k.write) {
-				par {
-					dac_44k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_44k)];
-					dac_44k.write = 1;
-				}
-				buffer.consumer[CONSUMER_ADDR(buffer_44k)] = 0x800;
-				buffer_44k.read_addr++;
-			}
+			buffer.consumer[CONSUMER_ADDR(buffer_8k)] = 0x000; // Clear part of buffer after read (so that it won't be mixed next time round)
+			buffer_8k.read_addr++;
 		}
-		reset (pause_playback) {
+		else
+		{
 			delay;
+		}
+
+		if (~pause_playback && ~dac_44k.write) {
+			par {
+				dac_44k.buffer = buffer.consumer[CONSUMER_ADDR(buffer_44k)];
+				dac_44k.write = 1;
+			}
+			buffer.consumer[CONSUMER_ADDR(buffer_44k)] = 0x000;
+			buffer_44k.read_addr++;
 		}
 	}
 }
