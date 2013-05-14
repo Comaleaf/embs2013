@@ -2,95 +2,60 @@
 #include "vlab.hch"
 #include "dac.hch"
 
-#define DIVIDE_8K  6250
-#define DIVIDE_11K 4532 // 4535.14739229   These have to be rounded to be multiples
-#define DIVIDE_22K 2266 // 2267.573696145  of eachother, so that the audio is in
-#define DIVIDE_44K 1133 // 1133.786848073  sync when they are mixed.
+DacInfo dac_8k;
+DacInfo dac_44k;
 
-struct {
-	unsigned 1  mode;
-	unsigned 1  write;
-	unsigned 12 buffer;
-} dac_8k;
+// This macro counts down a counter once per cycle. Each time the counter is zero, it
+// is effectively one tick in the simulated clock domain for each DAC.
+macro proc Clock_Divider(dac_info, number_of_cycles) {
+	while (1) {
+		if (dac_info.counter == 0) {
+			// Counter has reached zero. Reset to the number of cycles needed before the next tick.
+			dac_info.counter = number_of_cycles;
+		}
+		else {
+			dac_info.counter--;
+		}
+	}
+}
 
-struct {
-	unsigned 2  mode;
-	unsigned 1  write;
-	unsigned 12 buffer;
-} dac_44k;
+// 
+macro proc Output_Channel(dac_info) {
+	while (1) {
+		if (dac_info.mode != 0) {
+			if (dac_info.write && dac_info.counter == 0) {
+				par {
+					buffer = mix(dac_8k.buffer, dac_44k.buffer);
+					output = 1;
+					dac_info.write = 0;
+				}
+			}
+			else {
+				delay;
+			}
+		}
+		else {
+			dac_info.buffer = 0;
+		}
+	}
+}
 
 void dac_driver() {
-    unsigned 8  i;
-	unsigned 13 counter_8k;
-	unsigned 13 counter_44k;
-    
-    unsigned 12 buffer;
-    unsigned 1  output;
-    
-	sema dac_sema;
+	unsigned 12 buffer;
+	unsigned 1  output;
 	
 	par {
-		// 8K clock
+		Clock_Divider(dac_8k.counter,  DIVIDE_8K);
+		Clock_Divider(dac_44k.counter, DIVIDE_44K << (0 @ (3 - dac_44k.mode)));
+		Output_Channel(dac_8k);
+		Output_Channel(dac_44k);
 		while (1) {
-			if (counter_8k == 0) {
-				counter_8k = DIVIDE_8K;
+			if (output == 1) {
+				dac_write_to_output(0xF, buffer);
+				output = 0;
 			}
 			else {
-				counter_8k--;
-			}
-		}
-		// 44K/22K/11K clock
-		while (1) {	
-			if (counter_44k == 0) {
-				counter_44k = DIVIDE_44K << (0 @ (3 - dac_44k.mode));
-			}
-			else {
-				counter_44k--;
-			}
-		}
-        while (1) {
-            if (output == 1) {
-                dac_write_to_output(0xF, buffer);
-                output = 0;
-            }
-            else {
-                delay;
-            }
-        }
-		// 8K output
-		while (1) {
-			if (dac_8k.mode) {
-                if (dac_8k.write && counter_8k == 0) {
-                    par {
-                        buffer = mix(dac_8k.buffer, dac_44k.buffer);
-                        output = 1;
-                        dac_8k.write = 0;
-                    }
-                }
-                else {
-                    delay;
-                }
-			}
-			else {
-				dac_8k.buffer = 0;
-			}
-		}
-		// 11K/22K/44K output
-		while (1) {
-			if (dac_44k.mode != 0) {
-                if (dac_44k.write && counter_44k == 0) {
-                    par {
-                        buffer = mix(dac_8k.buffer, dac_44k.buffer);
-                        output = 1;
-                        dac_44k.write = 0;
-                    }
-                }
-                else {
-                    delay;
-                }
-			}
-			else {
-				dac_44k.buffer = 0;;
+				delay;
 			}
 		}
 	}

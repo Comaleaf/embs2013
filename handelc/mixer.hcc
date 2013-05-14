@@ -2,49 +2,23 @@
 #include "vlab.hch"
 #include "mixer.hch"
 
-chan <unsigned 12> mixer_next;
 unsigned 3 interval;
 BufferInfo *mixer_buffer;
 
 inline unsigned 12 mix(unsigned 12 x, unsigned 12 y) {
-    unsigned 13 mixed;
-    
-    mixed = (0 @ x) + (0 @ y);
-    return mixed[12:1];
-    /*
-    if (mixed[12] == 1) {
-        return 0xFFF;
-    }
-    else {
-        return mixed <- 12;
-    }*/
+	unsigned 13 mixed;
+
+	mixed = (0 @ x) + (0 @ y);
+	return mixed[12:1];
 }
 
-void mixer_driver() {
-	unsigned 12 new;
-    unsigned 3 length;
-    
-	while (1) {
-        par {
-            mixer_next ? new;
-            length = interval;
-            mixer_buffer->used++;
-        }
-        
-        /*
-        while (length != 0) {
-            new = mix(new, buffer.mixer[MIXER_ADDR(*mixer_buffer)]);
-            buffer.mixer[MIXER_ADDR(*mixer_buffer)] = new;
-            par {
-                mixer_buffer->write_addr++;
-                length--;
-            }
-        }*/
-       
-        new = mix(new, buffer.mixer[MIXER_ADDR(*mixer_buffer)]);
-        par {
-            buffer.mixer[MIXER_ADDR(*mixer_buffer)] = new;
-            mixer_buffer->write_addr += 0 @ interval;
-        }
+void mixer_next(unsigned 12 new) {
+	par {
+		mixer_buffer->used++;
+		new = mix(new, BufferIn_Get(*mixer_buffer));
+	}
+	par {
+		BufferIn_Get(*mixer_buffer) = new;
+		mixer_buffer->write_addr += 0 @ interval;
 	}
 }

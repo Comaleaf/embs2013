@@ -7,7 +7,7 @@ extern chan <unsigned 12> mixer_next;
 extern unsigned 3 interval;
 extern BufferInfo *mixer_buffer;
 
-void mixer_driver();
+void mixer_next(unsigned 12 new);
 inline unsigned 12 mix(unsigned 12 x, unsigned 12 y);
 
 #endif

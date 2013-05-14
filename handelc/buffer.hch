@@ -1,21 +1,23 @@
 #ifndef __BUFFER_HCH_
 #define __BUFFER_HCH_
 
+// Sets the size of the RAM space allocated to buffers, in 12-bit words
 #define BUFFER_WIDTH 16384
 
-#define MIXER_ADDR(buffer)    ((buffer).buffer_page @ (buffer).write_addr)
-#define CONSUMER_ADDR(buffer) ((buffer).buffer_page @ (buffer).read_addr)
+// These macros address a particular part of RAM for the buffer specified, using the read or write addr as appropriate
+#define BufferIn_Get(b)  buffer.in[(b).page @ (b).write_addr]
+#define BufferOut_Get(b) buffer.out[(b).page @ (b).read_addr]
 
 extern mpram {
-	ram unsigned 12 mixer    [];
-	ram unsigned 12 consumer [];
+	ram unsigned 12 in  [];
+	ram unsigned 12 out [];
 } buffer;
 
 typedef struct {
-	unsigned 13 read_addr;
-	unsigned 13 write_addr;
-	unsigned 13 used;
-	unsigned 1  buffer_page;
+	unsigned 13 read_addr;  // The cursor for reading from the buffer and outputting.
+	unsigned 13 write_addr; // The cursor for writing into the buffer whilst mixing.
+	unsigned 13 used;       // Number of times the buffer has been written into.
+	unsigned 1  page;       // The RAM page where this buffer is located.
 } BufferInfo;
 
 extern BufferInfo buffer_8k;

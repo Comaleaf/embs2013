@@ -40,7 +40,7 @@ set clock = internal CLK;
 
 void main(void);
 
-void fsl_to_buffer_driver();
-void buffer_to_dac_driver();
+void in_drive();
+void out_driver();
 
 #endif

@@ -1,9 +1,11 @@
 #include "buffer.hch"
 
+// Using multi-port RAM allows read/writes in parallel.
+// The `block` declaration instructs Handel-C to place in Block RAM.
 mpram {
-	ram unsigned 12 mixer    [BUFFER_WIDTH];
-	ram unsigned 12 consumer [BUFFER_WIDTH];
+	ram unsigned 12 in  [BUFFER_WIDTH];
+	ram unsigned 12 out [BUFFER_WIDTH];
 } buffer with { block=1 };
 
-BufferInfo buffer_8k  = {0, 0, 0, 0};
-BufferInfo buffer_44k = {0, 0, 0, 1};
+BufferInfo buffer_8k  = {0, 0, 0, 0}; // Sets page = 0
+BufferInfo buffer_44k = {0, 0, 0, 1}; // Sets page = 1
