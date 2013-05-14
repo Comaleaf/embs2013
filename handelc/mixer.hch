@@ -3,7 +3,7 @@
 
 extern chan <unsigned 12> mixer_next;
 
-unsigned 5 interval;
+unsigned 3 interval;
 
 BufferInfo *mixer_buffer;
 

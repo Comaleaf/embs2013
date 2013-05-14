@@ -88,7 +88,7 @@ void inth_mac() {
 			channel->width = (char)((*(packet+4) & 0x00FF0000) >> 16U) - 1;
 			
 			// Only forward packets for activated channels.
-			if (TEST_BIT(state.channels, stream)) {				
+			if (TEST_BIT(state.channels, stream)) {
 				int index  = (int)(*(packet+5));
 				int length = (int)(*(packet+6));
 				

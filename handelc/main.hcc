@@ -41,11 +41,11 @@ void fsl_to_buffer_driver() {
 			dac_44k.mode   = fsl_data[IDX_MODE_44K];
             
 			buffer_8k.read_addr   = 0;
-            buffer_8k.write_addr  = 0;
-            buffer_8k.used        = 0;
+			buffer_8k.write_addr  = 0;
+			buffer_8k.used        = 0;
 			buffer_44k.read_addr  = 0;
-            buffer_44k.write_addr = 0;
-            buffer_44k.used       = 0;
+			buffer_44k.write_addr = 0;
+			buffer_44k.used       = 0;
 
 			// Clear buffer
 			do {
@@ -73,7 +73,7 @@ void fsl_to_buffer_driver() {
 		}
 
 		// Determine position in the buffer to write values into
-		if (fsl_data[IDX_OFFSET][13] == 1) {
+		if (fsl_data[IDX_OFFSET][15] == 1) {
 			// Go backwards
 			mixer_buffer->write_addr -= (~fsl_data[IDX_OFFSET] + 1) <- 13;
 		}

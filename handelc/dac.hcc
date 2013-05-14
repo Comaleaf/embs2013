@@ -34,7 +34,6 @@ void dac_driver() {
 		while (1) {
 			if (dac_8k.mode && dac_8k.write && counter_8k == 0) {
 				while (trysema(dac_sema) == 0) delay;
-				uartwrite ! 'A';
 				par {
 					dac_write_to_output(0x0, dac_8k.buffer);
 					dac_8k.write = 0;
@@ -48,6 +47,7 @@ void dac_driver() {
 		// 11K/22K/44K output
 		while (1) {
 			if (dac_44k.mode != 0 && dac_44k.write && counter_44k == 0) {
+				
 				while (trysema(dac_sema) == 0) delay;
 				par {
 					dac_write_to_output(0x1, dac_44k.buffer);
