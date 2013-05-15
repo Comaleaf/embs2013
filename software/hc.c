@@ -1,24 +1,27 @@
 #include "hc.h"
 
+// Sends the sync pattern. Sent before any preamble or reset stream command.
 inline void hc_sync() {
 	hc_put(0xFFFFFFFF);
 	hc_put(0x00000000);
 	hc_put(0xFFFFFFFF);
 }
 
+// Sends the reset stream command with the given parameters.
 void hc_reset_stream(unsigned char buffer_8k_rate, unsigned char buffer_44k_rate) {
 	hc_sync();
 	hc_put(0x80000000 | ((buffer_8k_rate<<2) & 0x4) | (buffer_44k_rate & 0x3));
 }
 
+// Sends the packet preamble with the given parameters.
 void hc_preamble(unsigned char buffer, unsigned char width, unsigned char interval, unsigned short position, unsigned short length) {
 	unsigned int data;
 	
-	data = 0;                               // Reset flag
-	data = data + (buffer & 0x1);           // Buffer flag
-	data = (data<<1) + (width & 0x1);       // Width flag
-	data = (data<<3) + (interval & 0xF);    // Interval
-	data = (data<<13) + (position & 0x1FFF); // Ofset
+	data = 0;                                // Reset flag
+	data = data + (buffer & 0x1);            // Buffer flag
+	data = (data<<1) + (width & 0x1);        // Width flag
+	data = (data<<3) + (interval & 0xF);     // Interval
+	data = (data<<13) + (position & 0x1FFF); // Position
 	data = (data<<13) + (length & 0x1FFF);   // Length
 	
 	hc_sync();

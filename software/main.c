@@ -22,13 +22,14 @@ inline int get_channels() {
 void set_channels(int new_channels) {
 	char digits[3];
 
-	sample_rate_8k_buffer = 0;
-	sample_rate_44k_buffer = 0;
-	
 	// If any packets were received whilst new channels are being set, the data sent
 	// to the handel-c component would be sent without a preamble, so mac interrupts
 	// are temporarily disabled.
 	mac_disable_interrupts();
+
+	// These will be updated.
+	sample_rate_8k_buffer = 0;
+	sample_rate_44k_buffer = 0;
 
 	state.channels = new_channels;      // Update state
 	set_leds(0xFF & (new_channels>>1)); // Update LEDs on the Spartan
@@ -97,6 +98,8 @@ void inth_mac() {
 				// The preamble must be sent to the handel-c component first, so that it knows where to
 				// position the samples in the buffer.
 				if (channel->rate > 0) {
+					// If the sample rate of this channel is different to that of the stream, the index
+					// must be shifted so that the samples are positioned correctly in the buffer.
 					hc_preamble(1, channel->width, channel->interval, index << (sample_rate_44k_buffer - channel->rate), length);
 				}
 				else {
@@ -127,9 +130,12 @@ void inth_uart() {
 }
 
 void inth_switches() {
+	// If the fourth switch is flicked, flip the assessment into solution 2 mode (a different
+	// offset is used to determine the active channel from the switches, starting at 5-12).
 	if (TEST_BIT(get_switches(), 3)) {
 		set_channels(1 << (get_switches()-3));
 	}
+	// Otherwise do channels 1-8.
 	else {
 		set_channels(1 << (get_switches()+1));
 	}
