@@ -1,8 +1,6 @@
 #ifndef __MAIN_HCH_
 #define __MAIN_HCH_
 
-// Macros for interpreting the FSL preamble
-
 #define TYPE_PREAMBLE 0
 #define TYPE_RESET    1
 
@@ -17,30 +15,23 @@
 #define WIDTH_8BIT    0
 #define WIDTH_16BIT   1
 
-// Macros for accessing sections of the FSL preamble
-
-// For all types
 #define IDX_TYPE      31
 
-// For reset type
 #define IDX_MODE_8K   2
 #define IDX_MODE_44K  1:0
 
-// For preamble type
 #define IDX_BUFFER    30
 #define IDX_WIDTH     29
 #define IDX_INTERVAL  28:26
 #define IDX_POSITION  25:13
 #define IDX_LENGTH    12:0
 
-// --
-
 extern clk_port;
 set clock = internal CLK;
 
-void main(void);
+void main();
 
-void in_drive();
+void in_driver();
 void out_driver();
 
 #endif

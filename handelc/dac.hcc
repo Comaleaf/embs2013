@@ -2,8 +2,11 @@
 #include "vlab.hch"
 #include "dac.hch"
 
-DacInfo dac_8k;
-DacInfo dac_44k;
+StreamInfo stream_8k;
+StreamInfo stream_44k;
+
+unsigned 12 output_buffer;
+unsigned 1  output_ready;
 
 // This macro counts down a counter once per cycle. Each time the counter is zero, it
 // is effectively one tick in the simulated clock domain for each DAC.
@@ -19,15 +22,18 @@ macro proc Clock_Divider(dac_info, number_of_cycles) {
 	}
 }
 
-// 
-macro proc Output_Channel(dac_info) {
+// Mixes the given stream to the DAC output buffer.
+macro proc Mix_Stream(stream) {
 	while (1) {
-		if (dac_info.mode != 0) {
-			if (dac_info.write && dac_info.counter == 0) {
+		// Don't do anything unless the stream is enabled.
+		if (stream.mode != 0) {
+			// Only mix if there is a sample ready to mix on the stream, and if the clock tick is
+			// an output tick (when counter reaches zero).
+			if (stream.ready && stream.counter == 0) {
 				par {
-					buffer = mix(dac_8k.buffer, dac_44k.buffer);
-					output = 1;
-					dac_info.write = 0;
+					output_buffer = mix(stream_8k.buffer, stream_44k.buffer);
+					output_ready = 1;
+					stream.ready = 0;
 				}
 			}
 			else {
@@ -35,24 +41,24 @@ macro proc Output_Channel(dac_info) {
 			}
 		}
 		else {
-			dac_info.buffer = 0;
+			stream.buffer = 0;
 		}
 	}
 }
 
-void dac_driver() {
-	unsigned 12 buffer;
-	unsigned 1  output;
-	
+void dac_driver() {	
 	par {
-		Clock_Divider(dac_8k.counter,  DIVIDE_8K);
-		Clock_Divider(dac_44k.counter, DIVIDE_44K << (0 @ (3 - dac_44k.mode)));
-		Output_Channel(dac_8k);
-		Output_Channel(dac_44k);
+		// Set-up clocks for both streams.
+		Clock_Divider(stream_8k,  DIVIDE_8K);
+		Clock_Divider(stream_44k, DIVIDE_44K << (0 @ (3 - stream_44k.mode)));
+		// Mix both streams into the output.
+		Mix_Stream(stream_8k);
+		Mix_Stream(stream_44k);
+		// Output mixed streams.
 		while (1) {
-			if (output == 1) {
-				dac_write_to_output(0xF, buffer);
-				output = 0;
+			if (output_ready == 1) {
+				dac_write_to_output(0xF, output_buffer); // All channels.
+				output_ready = 0;
 			}
 			else {
 				delay;

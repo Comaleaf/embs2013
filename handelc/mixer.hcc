@@ -5,13 +5,25 @@
 unsigned 3 interval;
 BufferInfo *mixer_buffer;
 
+/*
+unsigned 5 num_channels;
 inline unsigned 12 mix(unsigned 12 x, unsigned 12 y) {
 	unsigned 13 mixed;
 
 	mixed = (0 @ x) + (0 @ y);
 	return mixed[12:1];
+}*/
+
+// Takes two samples and mixes them together by taking their average.
+inline unsigned 12 mix(unsigned 12 x, unsigned 12 y) {
+	unsigned 13 mixed;
+
+	mixed = (0 @ x) + (0 @ y);
+	return mixed[12:1]; // Drop the least significant bit to divide by two.
 }
 
+// Mixes the given sample into the buffer at the current location, and increments the location
+// by interval.
 void mixer_next(unsigned 12 new) {
 	par {
 		mixer_buffer->used++;

@@ -3,6 +3,7 @@
 
 chan <unsigned 32> fsl_read;
 
+// Polls the FSL bus until there is a word, then sends it over the fsl_read channel and repeats.
 void fsl_driver() {
 	unsigned 32 data_in;
 	

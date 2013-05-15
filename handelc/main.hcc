@@ -21,6 +21,8 @@ void main(void) {
 	}
 }
 
+// Reads commands/samples from FSL and inserts them into the appropriate part of the buffer, mixing
+// with existing buffer contents.
 void in_driver() {
 	// The data word from the FSL bus.
 	unsigned 32 fsl_data;
@@ -34,7 +36,7 @@ void in_driver() {
 	// Process data from FSL into buffer
 	while (1) {
 		// The protocol is one-way, so to ensure that the handel-c component is in sync with
-		// the microblaze component, wait for a synchronisation sequence before processing an instruction
+		// the microblaze component, wait for a synchronisation sequence before processing an instruction.
 		fsl_read ? fsl_data;
 		if (fsl_data != 0xFFFFFFFF) continue;
 		fsl_read ? fsl_data;
@@ -46,13 +48,13 @@ void in_driver() {
 		// Receive a new packet. The first FSL word will be the preamble/reset instruction.
 		fsl_read ? fsl_data;
         
-		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit
+		if (fsl_data[IDX_TYPE] == TYPE_RESET) { // Reset bit.
 			// Pause playback to prevent RAM conflicts whilst erasing.
 			pause_playback = 1;
             
 			// Set the mode of the DAC drivers as specified by the packet.
-			dac_8k.mode  = 0 @ fsl_data[IDX_MODE_8K];
-			dac_44k.mode = fsl_data[IDX_MODE_44K];
+			stream_8k.mode  = 0 @ fsl_data[IDX_MODE_8K];
+			stream_44k.mode = fsl_data[IDX_MODE_44K];
             
 			// Reset all buffer information.
 			buffer_8k.write_addr  = 0;
@@ -70,7 +72,7 @@ void in_driver() {
 					buffer.in[erase_cursor+1] = 0x000;
 					erase_cursor += 2;
 				}
-			} while (erase_cursor[13:1] != 0); // Least significant bit should be ignored because cursor increments by two
+			} while (erase_cursor[13:1] != 0); // Least significant bit ignored as cursor increments by two
 			
 			// Skip the rest
 			continue;
@@ -97,29 +99,39 @@ void in_driver() {
 			// Get next sample from FSL.
 			par {
 				fsl_read ? fsl_data;
-				if (length[9:2] == 0) {
-					length = 0; // Prevent underflows
+				
+				// Decrease the length counter by the number of bytes to write into the buffer, but make sure
+				// length does not underflow, or the loop will not terminate.
+				// Whilst the length is normally a multiple of four, this step is still necessary to prevent
+				// a corrupt packet from causing an infinite loop.
+				
+				// If the 11 most-significant bits are zero, then subtracting four will always underflow.
+				if (length[12:2] == 0) { 
+					length = 0;
 				}
+				// Otherwise it is safe to subtract.
 				else {
 					length -= 4;
 				}
 			}
 			
+			// Depending on the packet width, a different number of samples can be read from a single FSL word.
 			if (packet_width == WIDTH_8BIT) {
-				// Can read 4 samples at a time from FSL bus with 8-bit samples
 				mixer_next(0 @ (unsigned 11)(fsl_data[31:24] @ 0));
 				mixer_next(0 @ (unsigned 11)(fsl_data[23:16] @ 0));
 				mixer_next(0 @ (unsigned 11)(fsl_data[15:8]  @ 0));
 				mixer_next(0 @ (unsigned 11)(fsl_data[7:0]   @ 0));
 			}
 			else {
-				// Can read 2 samples at a time from FSL bus with 16-bit samples
+				// 16-bit samples...
 				mixer_next(fsl_data[31:21] @ ~fsl_data[20]);
 				mixer_next(fsl_data[15:5]  @ ~fsl_data[4]);
 			}
 		}
         
 		// Make sure playback isn't paused if the buffer is above a certain size.
+		// Only check the 4 most-signifiant bits to give the buffer some head-room to expand before the samples
+		// are read. Otherwise the buffer may overflow.
 		if (mixer_buffer->used[12:9] == 0xF) {
 			pause_playback = 0;
 		}
@@ -129,26 +141,30 @@ void in_driver() {
 	}
 }
 
+// Reads the contents of the buffer and outputs them to DAC module.
 void out_driver() {
-	// Consume buffer data and output on DAC
 	while (1) {
-		if (~pause_playback && ~dac_8k.write) {
+		// Only output to DAC if playback is not paused and the DAC module is ready to receive.
+		if (~pause_playback && ~stream_8k.ready) {
 			par {
-				dac_8k.buffer = BufferIn_Get(buffer_8k);
-				dac_8k.write = 1;
+				// Send next sample to DAC module.
+				stream_8k.buffer = BufferIn_Get(buffer_8k);
+				stream_8k.ready = 1;
 			}
-			BufferIn_Get(buffer_8k) = 0x000; // Clear part of buffer after read (so that it won't be mixed next time round)
+			// After reading, clear that location in the buffer to prevent it from being mixed back in by the mixer.
+			BufferIn_Get(buffer_8k) = 0x000;
+			// Incremen the read location cursor for the next read.
 			buffer_8k.read_addr++;
 		}
-		else
-		{
+		else {
 			delay;
 		}
 
-		if (~pause_playback && ~dac_44k.write) {
+		// Do the same again, but for the 44K buffer.
+		if (~pause_playback && ~stream_44k.ready) {
 			par {
-				dac_44k.buffer = BufferIn_Get(buffer_44k);
-				dac_44k.write = 1;
+				stream_44k.buffer = BufferIn_Get(buffer_44k);
+				stream_44k.ready = 1;
 			}
 			BufferIn_Get(buffer_44k) = 0x000;
 			buffer_44k.read_addr++;

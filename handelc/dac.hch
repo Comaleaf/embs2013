@@ -12,10 +12,10 @@ typedef struct {
 	unsigned 1  write;
 	unsigned 12 buffer;
 	unsigned 13 counter;
-} DacInfo;
+} StreamInfo;
 
-extern DacInfo dac_8k;
-extern DacInfo dac_44k;
+extern StreamInfo stream_8k;
+extern StreamInfo stream_44k;
 
 void dac_driver();
 

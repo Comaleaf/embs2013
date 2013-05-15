@@ -3,7 +3,6 @@
 
 #include "buffer.hch"
 
-extern chan <unsigned 12> mixer_next;
 extern unsigned 3 interval;
 extern BufferInfo *mixer_buffer;
 
